@@ -11,13 +11,6 @@ var parser = require('./server_files/data_parser')
 // Serial port
 var SerialPort = serialport.SerialPort; // localize object constructor
 var baudrate = 115200;
-//var port = "/dev/tty.usbserial-A700eCo8";
-//var port = "/dev/ttyUSB0";
-var port = "COM6";
-var sp = new SerialPort(port, {
-	parser: serialport.parsers.raw,
-	baudrate: baudrate
-});
 
 // Global vars
 var dataTypeKey = -1;
@@ -38,7 +31,26 @@ var clientSocketListID  = [];
 
 // FROMFILE (data from stored file)
 var FROMFILE = 0;
+//##############################################################################
+portSetup = function() {
+	SerialPort.list(function (err, ports) {
+		if (err) {
+			console.log(error);
+		}
 
+		ports.forEach(function(port) {
+			console.log(port.comName);
+		});
+	});
+
+	//var port = "/dev/tty.usbserial-A700eCo8";
+	//var port = "/dev/ttyUSB0";
+	var port = "COM6";
+	var sp = new SerialPort(port, {
+		parser: serialport.parsers.raw,
+		baudrate: baudrate
+	});
+}
 //##############################################################################
 setup = function() {
     var server = new bb.Server(80, "./client_files", onconnect);  
