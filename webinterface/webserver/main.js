@@ -21,6 +21,7 @@ var valOut = 0;
 var dataTx = [];
 var dataCounter = 0;
 var dataType_active = {};
+var port;
 var sp;
 var sensors = [];
 var numSensors = 0;
@@ -33,23 +34,27 @@ var clientSocketListID  = [];
 var FROMFILE = 0;
 //##############################################################################
 portSetup = function() {
-	serialport.list(function (err, ports) {
-		if (err) {
-			console.log(error);
-		}
-
-		ports.forEach(function(port) {
-			console.log(port.comName);
+	if (process.argv[].length => 2) {
+		port = argv[1];
+	} else {
+		portList = [];
+		serialport.list(function (err, ports) {
+			if (err) {
+				console.log(error);
+			}
+			int i = 1;
+			ports.forEach(function(port) {
+				console.log(port.comName);
+			});
 		});
-	});
 
-	//var port = "/dev/tty.usbserial-A700eCo8";
-	//var port = "/dev/ttyUSB0";
-	var port = "COM6";
-	sp = new SerialPort(port, {
-		parser: serialport.parsers.raw,
-		baudrate: baudrate
-	});
+		console.log("Choose a com name");
+		port = "COM6";
+		sp = new SerialPort(port, {
+			parser: serialport.parsers.raw,
+			baudrate: baudrate
+		});
+	}
 }
 portSetup();
 
