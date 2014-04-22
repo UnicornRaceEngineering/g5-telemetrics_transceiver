@@ -44,6 +44,9 @@ module.exports = function(data) {
 		var startSequenceLength = 3;
 		//Looks for a start sequence
 		if (isStartSequence(datain.slice(0,startSequenceLength))) {
+			//removes the start sequence bytes
+			datain.slice(3);
+			var dataTypeKey = getDataType(dataTypes);
 
 		}
 		else {

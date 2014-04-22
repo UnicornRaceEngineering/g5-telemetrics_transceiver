@@ -34,15 +34,15 @@ var clientSocketListID  = [];
 var FROMFILE = 0;
 //##############################################################################
 portSetup = function() {
-	if (process.argv[].length => 2) {
-		port = argv[1];
+	if (process.argv.length > 2) {
+		port = process.argv[2];
 	} else {
 		portList = [];
 		serialport.list(function (err, ports) {
 			if (err) {
-				console.log(error);
+				console.log(err);
 			}
-			int i = 1;
+			var i = 1;
 			ports.forEach(function(port) {
 				console.log(port.comName);
 			});
@@ -50,11 +50,11 @@ portSetup = function() {
 
 		console.log("Choose a com name");
 		port = "COM6";
-		sp = new SerialPort(port, {
+	}
+	sp = new SerialPort(port, {
 			parser: serialport.parsers.raw,
 			baudrate: baudrate
 		});
-	}
 }
 portSetup();
 
