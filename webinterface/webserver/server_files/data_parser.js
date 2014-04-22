@@ -2,10 +2,10 @@ var dataType = require('./sensor_config');
 
 var startSequence = [255, 123, 10];		//Signature of the start of a can frame?
 
-/*
- *
- *
- *
+/* Checks three databytes, and returns true if they contain
+ * a start sequence.
+ * Input: An array containing three bytes 
+ * OutPut: True if the three bytes is a start sequence, False if not. 
  */
 function isStartSequence(data) {
 
@@ -36,11 +36,22 @@ module.exports = function(data) {
 	//Loops through each byte in data stream
 	for(var i=0; i<datain.length; i++){
 		var currByte = datain[i]; // the current byte in the stream
+		var startSequenceLength = 3;
+
+		/*Looks for start sequence */
+		if (isStartSequence(datain.slice(i, i + startSequenceLength))) {
+			package_start = true;
+			//Start sequence found, skip the start sequence bytes
+			i += startSequenceLength;
+			currByte = datain[i];
+		}
+
+		//Begin Legacy code *********************************************************
 
 		//console.log("("+currByte+")");
 		
 		// Search data pack. start sequence, if found then next byte is a type
-		if((package_start_counter === 0) && (currByte === startSequence[0]))
+		/*if((package_start_counter === 0) && (currByte === startSequence[0]))
 			package_start_counter = 1;
 		else if((package_start_counter === 1) && (currByte === startSequence[1]))
 			package_start_counter = 2;
@@ -48,8 +59,10 @@ module.exports = function(data) {
 			package_start_counter = 0;
 			package_start = true;
 			continue;
-		}
-				
+		}*/
+		
+		//End legacy code************************************************************* 
+
 		// Packet start found, get packet ID
 		if (package_start){	
 		
