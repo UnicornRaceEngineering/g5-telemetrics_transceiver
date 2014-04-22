@@ -34,7 +34,7 @@ var clientSocketListID  = [];
 var FROMFILE = 0;
 //##############################################################################
 portSetup = function() {
-	if (process.argv[].length => 1) {
+	if (process.argv[].length => 2) {
 		port = argv[1];
 	} else {
 		portList = [];
@@ -49,7 +49,7 @@ portSetup = function() {
 		});
 
 		console.log("Choose a com name");
-		port = read();
+		port = "COM6";
 		sp = new SerialPort(port, {
 			parser: serialport.parsers.raw,
 			baudrate: baudrate
