@@ -1,4 +1,4 @@
-var dataType = require('./sensor_config');
+var dataType = require('../sensor_config');
 
 var startSequence = [255, 123, 10];		//Signature of the start of a can frame?
 
@@ -9,7 +9,7 @@ var startSequence = [255, 123, 10];		//Signature of the start of a can frame?
  */
 function isStartSequence(data) {
 
-	for(var i = 0; i < data.length, i++) {
+	for(var i = 0; i < data.length; i++) {
 		if (data[i] !== startSequence[i]) {
 			return false;
 		}
@@ -34,7 +34,7 @@ module.exports = function(data) {
 	var datain = data;
 
 	//Loops through each byte in data stream
-	for(var i=0; i<datain.length; i++){
+	for(var i=0; i<datain.length; i++) {
 		var currByte = datain[i]; // the current byte in the stream
 		var startSequenceLength = 3;
 

@@ -21,7 +21,7 @@ var valOut = 0;
 var dataTx = [];
 var dataCounter = 0;
 var dataType_active = {};
-
+var sp;
 var sensors = [];
 var numSensors = 0;
 
@@ -33,7 +33,7 @@ var clientSocketListID  = [];
 var FROMFILE = 0;
 //##############################################################################
 portSetup = function() {
-	SerialPort.list(function (err, ports) {
+	serialport.list(function (err, ports) {
 		if (err) {
 			console.log(error);
 		}
@@ -46,11 +46,13 @@ portSetup = function() {
 	//var port = "/dev/tty.usbserial-A700eCo8";
 	//var port = "/dev/ttyUSB0";
 	var port = "COM6";
-	var sp = new SerialPort(port, {
+	sp = new SerialPort(port, {
 		parser: serialport.parsers.raw,
 		baudrate: baudrate
 	});
 }
+portSetup();
+
 //##############################################################################
 setup = function() {
     var server = new bb.Server(80, "./client_files", onconnect);  
