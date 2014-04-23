@@ -1,6 +1,6 @@
-// Copyright (C) 2011 - Texas Instruments, Jason Kridner 
+// Copyright (C) 2011 - Texas Instruments, Jason Kridner
 //
-// 
+//
 var fs = require('fs');
 var child_process = require('child_process');
 var http = require('http');
@@ -169,6 +169,6 @@ exports.Server = function(port, subdir, onconnect) {
     this.begin = function() {
         //this.server6.listen(port, '::0');
         this.server.listen(port);
-        
+
     };
 };

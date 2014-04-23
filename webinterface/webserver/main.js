@@ -60,8 +60,8 @@ portSetup();
 
 //##############################################################################
 setup = function() {
-    var server = new bb.Server(80, "./client_files", onconnect);  
-    console.log("Start...\n");       
+    var server = new bb.Server(80, "./client_files", onconnect);
+    console.log("Start...\n");
 
 	// Create object with active data
     for(var key in dataType) {
@@ -69,7 +69,7 @@ setup = function() {
 			dataType_active[key] = dataType[key];
         }
 	}
-    server.begin();    
+    server.begin();
     var os = require('os');
 
 	var interfaces = os.networkInterfaces();
@@ -90,29 +90,29 @@ setup = function() {
 // New serial data in
 
 sp.on("data", function (data){
-	newdata(data);	
+	newdata(data);
 });
 //##############################################################################
-var onconnect = function(socket) {  
+var onconnect = function(socket) {
 
 	// Array of connected clients
 	clientSocketList[socket.id] = socket;
 	clientSocketListID[socket.id]  = socket.id;
-	
+
 	console.log("\n############################################################################");
 	console.log("\nNew client connected ["+Object.size(clientSocketListID)+"]");
 	console.log("\n############################################################################");
-    
+
     // Transmit config (active datatypes only), name, min, max, freq, etc.
 	socket.emit('config', "" + JSON.stringify(dataType_active));
-   
+
    // On client to server incomming (control)
     socket.on('control', function(datatmp){
 		var usercontrol = JSON.parse(datatmp);
 		console.log(usercontrol.action+";"+usercontrol.val);
 		sp.write("msg\n");
-    });   
-   
+    });
+
     // On client disconnect
     socket.on('disconnect', function() {
 		delete clientSocketList[socket.id];
@@ -123,15 +123,15 @@ var onconnect = function(socket) {
     });
 };
 //##############################################################################
-var txData = function(dataTxtmp){  
+var txData = function(dataTxtmp){
 		// Transmitt to all clients (her kan vaelges lavere frekvens til eks. smartphones).
 		for(var key in clientSocketList){
 			clientSocketList[key].emit('data', "" + JSON.stringify(dataTxtmp));
-		}		
-};    
+		}
+};
 //##############################################################################
 var newdata = function(data){
-	
+
 	// Data from serialport
 	var datain = data;
 	var startSequence = [255, 123, 10];
@@ -140,7 +140,7 @@ var newdata = function(data){
 		var currByte = datain[i]; // the current byte in the stream
 
 		//console.log("("+currByte+")");
-		
+
 		// Search data pack. start sequence, if found then next byte is a type
 		if((package_start_counter === 0) && (currByte === startSequence[0]))
 			package_start_counter = 1;
@@ -151,34 +151,34 @@ var newdata = function(data){
 			package_start = true;
 			continue;
 		}
-				
+
 		// Packet start found, get packet ID
-		if (package_start){	
-		
+		if (package_start){
+
 			// Reset
 			package_start = false;
 			bytesToRead = -1;
 			valOut = 0;
-			
+
 			dataTypeKey = getDataType(dataType,currByte);
-			
+
 			// Valid data type found
-			if(dataTypeKey !== -1){		
+			if(dataTypeKey !== -1){
 				bytesToRead = (dataType[dataTypeKey].datalength/8); // Bytes to read
 			}
 			else
 				console.log("Invalid data (ID: "+currByte+")");
 			continue;
-		}			
-		
-		// Data bytes 
-		if(bytesToRead > 0){	
+		}
+
+		// Data bytes
+		if(bytesToRead > 0){
 			valOut = valOut + (currByte << (8*(bytesToRead-1)));	// Shift bytes
 			bytesToRead -= 1; // Databyte counter
 			continue;
-		}	
-	
-		// No more data bytes, 
+		}
+
+		// No more data bytes,
 		if(bytesToRead === 0){
 			var nameTerm = dataType[dataTypeKey].name.rpad(" ", 10); // Dette skal ikke ske
 			var name = dataType[dataTypeKey].name;
@@ -192,22 +192,22 @@ var newdata = function(data){
 				timestamp: new Date().getTime()
 			};
 			sensors[numSensors++] = sensor;
-		
+
 			// Store the bytes
 			if(dataType[dataTypeKey].active === 1){
 				// Add to data pack
 				dataTx[dataCounter++] = sensor;
 				//console.log("ID:\t"+dataType[dataTypeKey].ID+"\tType:\t"+nameTerm+"\tData:\t"+value);
 			}
-			
+
 			// Reset
 			bytesToRead = -1;
 			valOut = 0;
-			
+
 			// Next data byte ?
 			dataTypeKey = getDataType(dataType,currByte);
 			// Valid ?
-			if(dataTypeKey !== -1){ 
+			if(dataTypeKey !== -1){
 				bytesToRead = (dataType[dataTypeKey].datalength/8);
 			}
 			// No more data, transmit fetched data to client
@@ -249,12 +249,12 @@ if(FROMFILE == 1){
 		];
 
 		newdata(tmp);
-		
+
 		// Increase data index (from file)
 		index += 6;
 		if(index >= datalen)
 			index = 0;
-			
+
 		setTimeout(newStoredData, delay);
 	};
 

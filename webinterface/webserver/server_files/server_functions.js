@@ -12,9 +12,9 @@ getDataType = function(tmpDataCfg,ID){
 	for (var key in tmpDataCfg){
 		if(tmpDataCfg[key].ID == ID)
 			return key; // ID found
-	}	
+	}
 	// ID not found
-	return -1; 
+	return -1;
 };
 
 // Padding right

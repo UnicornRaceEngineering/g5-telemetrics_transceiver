@@ -4,8 +4,8 @@ var startSequence = [255, 123, 10];		//Signature of the start of a can frame?
 
 /* Checks three databytes, and returns true if they contain
  * a start sequence.
- * Input: An array containing three bytes 
- * OutPut: True if the three bytes matches the start sequence, False if not. 
+ * Input: An array containing three bytes
+ * OutPut: True if the three bytes matches the start sequence, False if not.
  */
 function isStartSequence(data) {
 
@@ -50,7 +50,7 @@ module.exports = function(data) {
 			currByte = datain[0];
 			//Gets the packagetype
 			var packageTypeKey = getDataType(dataType, currByte);
-			
+
 
 
 		}
@@ -77,7 +77,7 @@ module.exports = function(data) {
 		//Begin Legacy code /*********************************************************
 
 		////console.log("("+currByte+")");
-		
+
 		// Search data pack. start sequence, if found then next byte is a type
 		/*if((package_start_counter === 0) && (currByte === startSequence[0]))
 			package_start_counter = 1;
@@ -88,37 +88,37 @@ module.exports = function(data) {
 			package_start = true;
 			continue;
 		}*/
-		
-		//End legacy code************************************************************* 
+
+		//End legacy code*************************************************************
 
 		// Packet start found, get packet ID and size
-		if (package_start){	
-		
+		if (package_start){
+
 			// Reset
 			package_start = false;
 			valOut = 0;
 			//Get data type key
 			dataTypeKey = getDataType(dataType,currByte);
-			
+
 			// Valid data type found
-			if(dataTypeKey !== -1){		
+			if(dataTypeKey !== -1){
 				bytesToRead = (dataType[dataTypeKey].datalength/8); // Bytes to read
 			}
 			else
 				console.error("Invalid data (ID: "+currByte+")");
 			continue;
-		}			
-		
-		// Read Data bytes 
-		if(bytesToRead > 0){	
+		}
+
+		// Read Data bytes
+		if(bytesToRead > 0){
 			valOut = valOut + (currByte << (8*(bytesToRead-1)));	// Shift bytes
 			bytesToRead -= 1; // Databyte counter
 			continue;
-		}	
-	
-		// No more data bytes, 
+		}
+
+		// No more data bytes,
 		if(bytesToRead === 0){
-			
+
 			var name = dataType[dataTypeKey].name;
 			var  value = dataType[dataTypeKey].conv(valOut);
 
@@ -132,22 +132,22 @@ module.exports = function(data) {
 				timestamp: new Date().getTime()
 			};
 			sensors[numSensors++] = sensor;
-		
+
 			// Store the bytes
 			if(dataType[dataTypeKey].active === 1){
 				// Add to data pack
 				dataTx[dataCounter++] = sensor;
 
 			}
-			
+
 			// Reset
 			bytesToRead = -1;
 			valOut = 0;
-			
+
 			// Next data byte ?
 			dataTypeKey = getDataType(dataType,currByte);
 			// Valid ?
-			if(dataTypeKey !== -1){ 
+			if(dataTypeKey !== -1){
 				bytesToRead = (dataType[dataTypeKey].datalength/8);
 			}
 			// No more data, transmit fetched data to client

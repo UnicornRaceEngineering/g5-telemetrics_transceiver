@@ -3,13 +3,13 @@
 // Data from MCU
 exports.empty = {
     name: 'Empty',												// Data name
-	ID: 0,														// Data ID		
+	ID: 0,														// Data ID
 	active: 0,													// Data active ?
 	rounddec: 2,												// Round to decimal
 	conv: function (x) {return (x*1+0).toFixed(this.rounddec);},// Conv to human numbers
 	datalength: 0,												// Lenght in bits
     max: 9999,													// Max exp. value
-    min: 0														// Min exp. value	
+    min: 0														// Min exp. value
 };
 exports.fuelPressure = {
     name: 'Fuel Press.',
@@ -127,7 +127,7 @@ exports.statusLambdaV2 = {
 	active: 0,
 	rounddec: 2,
 	conv: function (x) {
-		if( x > 32768) x = -(65535 - x); 
+		if( x > 32768) x = -(65535 - x);
 		return (70-x/64).toFixed(this.rounddec);
 	},
 	datalength: 16,
@@ -444,7 +444,7 @@ exports.gearboardtemp = {
 		Resistance=((10240000/(1024 - x)) - 10000);
 		Temp = Math.log(Resistance);
 		Temp = 1 / (0.001129148 + (0.000234125 * Temp) + (0.0000000876741 * Temp * Temp * Temp));
-		x = Temp - 273.15; 
+		x = Temp - 273.15;
 		return x.toFixed(this.rounddec);
 		},
 	datalength: 16,
