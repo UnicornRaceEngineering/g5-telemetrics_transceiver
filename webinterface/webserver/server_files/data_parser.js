@@ -44,7 +44,7 @@ module.exports = function(data) {
 		currByte = datain[0];
 
 		//Looks for a package  start sequence
-		if (isStartSequence(datain.slice(0,startSequence.length))) {
+		if (isStartSequence(datain.slice(0, startSequence.length))) {
 			//removes the start sequence bytes
 			datain = datain.slice(3);
 			currByte = datain[0];
@@ -60,7 +60,7 @@ module.exports = function(data) {
 	}
 
 	//Loops through each byte in data stream
-	for(var i=0; i<datain.length; i++) {
+	for (var i=0; i < datain.length; i++) {
 		var currByte = datain[i]; // the current byte in the stream
 
 
@@ -92,7 +92,7 @@ module.exports = function(data) {
 		//End legacy code*************************************************************
 
 		// Packet start found, get packet ID and size
-		if (package_start){
+		if (package_start) {
 
 			// Reset
 			package_start = false;
@@ -102,7 +102,7 @@ module.exports = function(data) {
 
 			// Valid data type found
 			if(dataTypeKey !== -1){
-				bytesToRead = (dataType[dataTypeKey].datalength/8); // Bytes to read
+				bytesToRead = (dataType[dataTypeKey].datalength / 8); // Bytes to read
 			}
 			else
 				console.error("Invalid data (ID: "+currByte+")");
@@ -110,14 +110,14 @@ module.exports = function(data) {
 		}
 
 		// Read Data bytes
-		if(bytesToRead > 0){
+		if (bytesToRead > 0) {
 			valOut = valOut + (currByte << (8*(bytesToRead-1)));	// Shift bytes
 			bytesToRead -= 1; // Databyte counter
 			continue;
 		}
 
 		// No more data bytes,
-		if(bytesToRead === 0){
+		if (bytesToRead === 0) {
 
 			var name = dataType[dataTypeKey].name;
 			var  value = dataType[dataTypeKey].conv(valOut);
@@ -134,7 +134,7 @@ module.exports = function(data) {
 			sensors[numSensors++] = sensor;
 
 			// Store the bytes
-			if(dataType[dataTypeKey].active === 1){
+			if (dataType[dataTypeKey].active === 1) {
 				// Add to data pack
 				dataTx[dataCounter++] = sensor;
 
@@ -147,12 +147,12 @@ module.exports = function(data) {
 			// Next data byte ?
 			dataTypeKey = getDataType(dataType,currByte);
 			// Valid ?
-			if(dataTypeKey !== -1){
+			if (dataTypeKey !== -1) {
 				bytesToRead = (dataType[dataTypeKey].datalength/8);
 			}
 			// No more data, transmit fetched data to client
 			// Pak data her, og kald dataTx
-			else{
+			else {
 				// Tx data to all clients
 				//console.log("Tx data -------------------------------------------------");
 				txData(dataTx);
@@ -164,7 +164,6 @@ module.exports = function(data) {
 				sensors = [];
 				numSensors = 0;
 			}
-
 		}
 	}
 
