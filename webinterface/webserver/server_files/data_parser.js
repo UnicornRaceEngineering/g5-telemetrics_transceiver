@@ -46,7 +46,7 @@ module.exports = function(data) {
 		//Looks for a package  start sequence
 		if (isStartSequence(datain.slice(0, startSequence.length))) {
 			//removes the start sequence bytes
-			datain = datain.slice(3);
+			datain = datain.slice(startSequence.length);
 			currByte = datain[0];
 			//Gets the packagetype
 			var packageTypeKey = getDataType(dataType, currByte);
