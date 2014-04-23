@@ -42,9 +42,9 @@ module.exports = function(data) {
 	//Processes each data byte
 	while (datain.length !== 0) {
 		currByte = datain[0];
-		var startSequenceLength = 3;
+
 		//Looks for a package  start sequence
-		if (isStartSequence(datain.slice(0,startSequenceLength))) {
+		if (isStartSequence(datain.slice(0,startSequence.length))) {
 			//removes the start sequence bytes
 			datain = datain.slice(3);
 			currByte = datain[0];
@@ -55,20 +55,20 @@ module.exports = function(data) {
 
 		}
 		else {
-			datain.Shift()
+			datain.Shift();
 		}
 	}
 
 	//Loops through each byte in data stream
 	for(var i=0; i<datain.length; i++) {
 		var currByte = datain[i]; // the current byte in the stream
-		var startSequenceLength = 3;
+
 
 		/*Looks for start sequence*/
-		if (isStartSequence(datain.slice(i, i + startSequenceLength))) {
+		if (isStartSequence(datain.slice(i, i + startSequence.length))) {
 			package_start = true;
 			//Start sequence found, move the index past the start sequence bytes
-			i += startSequenceLength;
+			i += startSequence.length;
 			currByte = datain[i];
 
 
@@ -169,4 +169,4 @@ module.exports = function(data) {
 	}
 
 
-}
+};

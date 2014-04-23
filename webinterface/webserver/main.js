@@ -6,7 +6,7 @@ var io = require('socket.io');
 var dataType = require('./sensor_config');
 require('./server_files/server_functions');
 var db = require("./db");
-var parser = require('./server_files/data_parser')
+var parser = require('./server_files/data_parser');
 
 // Serial port
 var SerialPort = serialport.SerialPort; // localize object constructor
@@ -55,7 +55,7 @@ portSetup = function() {
 			parser: serialport.parsers.raw,
 			baudrate: baudrate
 		});
-}
+};
 portSetup();
 
 //##############################################################################
