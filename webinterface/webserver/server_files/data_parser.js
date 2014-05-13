@@ -1,5 +1,5 @@
 var dataType = require('../sensor_config');
-
+require('../server_functions');
 var startSequence = [255, 123, 10];		//Signature of the start of a can frame?
 
 /* Checks three databytes, and returns true if they contain
