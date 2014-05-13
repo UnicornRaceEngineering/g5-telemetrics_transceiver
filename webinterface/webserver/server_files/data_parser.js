@@ -102,7 +102,7 @@ module.exports = function(data) {
 
 			// Valid data type found
 			if(dataTypeKey !== -1){
-				bytesToRead = (dataType[dataTypeKey].datalength / 8); // Bytes to read
+				bytesToRead = (dataType[dataTypeKey].datalength / 8); //Bytes to read
 			}
 			else
 				console.error("Invalid data (ID: "+currByte+")");
@@ -111,7 +111,7 @@ module.exports = function(data) {
 
 		// Read Data bytes
 		if (bytesToRead > 0) {
-			valOut = valOut + (currByte << (8*(bytesToRead-1)));	// Shift bytes
+			valOut = valOut + (currByte << (8*(bytesToRead-1)));	//Shift bytes
 			bytesToRead -= 1; // Databyte counter
 			continue;
 		}
@@ -120,7 +120,7 @@ module.exports = function(data) {
 		if (bytesToRead === 0) {
 
 			var name = dataType[dataTypeKey].name;
-			var  value = dataType[dataTypeKey].conv(valOut);
+			var value = dataType[dataTypeKey].conv(valOut);
 
 			//Format value to range
 			value = Math.min(value, dataType[dataTypeKey].max);
@@ -151,7 +151,7 @@ module.exports = function(data) {
 				bytesToRead = (dataType[dataTypeKey].datalength/8);
 			}
 			// No more data, transmit fetched data to client
-			// Pak data her, og kald dataTx
+			// Store data here and call dataTx
 			else {
 				// Tx data to all clients
 				//console.log("Tx data -------------------------------------------------");
