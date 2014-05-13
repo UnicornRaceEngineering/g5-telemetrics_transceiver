@@ -28,8 +28,14 @@ function isStartSequence(data) {
 		continue;
 	}*/
 }
-
-
+//Reads the value in a package of multiple bytes
+function getValOut(data) {
+	var value = 0;
+	for (var i = 0; i < data.length; i++) {
+		value = value + (data[i] << (8*(k-1)))	//Shift bytes
+	};
+	return value;
+}
 
 module.exports = function(data) {
 	// Data from serialport
@@ -104,21 +110,16 @@ module.exports = function(data) {
 			if(dataTypeKey !== -1){
 				bytesToRead = (dataType[dataTypeKey].datalength / 8); //Bytes to read
 			}
-			else
+			else {
 				console.error("Invalid data (ID: "+currByte+")");
-			continue;
-		}
+			}
 
-		// Read Data bytes
-		if (bytesToRead > 0) {
-			valOut = valOut + (currByte << (8*(bytesToRead-1)));	//Shift bytes
-			bytesToRead -= 1; // Databyte counter
-			continue;
-		}
+			//Finds the value of the package
+			valOut = getValOut(datain.slice(i, i + bytesToRead);
 
-		// No more data bytes,
-		if (bytesToRead === 0) {
 
+
+			//No more data in the current package
 			var name = dataType[dataTypeKey].name;
 			var value = dataType[dataTypeKey].conv(valOut);
 
@@ -140,6 +141,10 @@ module.exports = function(data) {
 
 			}
 
+			//Update CurrByte
+			i+= bytesToRead;
+			currByte = datain[i];
+			
 			// Reset
 			bytesToRead = -1;
 			valOut = 0;
@@ -165,7 +170,15 @@ module.exports = function(data) {
 				numSensors = 0;
 			}
 		}
+
+		/* Legacy
+		// Read Data bytes
+		if (bytesToRead > 0) {
+			valOut = valOut + (currByte << (8*(bytesToRead-1)));	//Shift bytes
+			bytesToRead -= 1; // Databyte counter
+			continue;
+		} */
+
+		// No more data bytes,
 	}
-
-
 };
