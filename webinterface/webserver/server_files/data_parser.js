@@ -32,7 +32,7 @@ function isStartSequence(data) {
 function getValOut(data) {
 	var value = 0;
 	for (var i = 0; i < data.length; i++) {
-		value = value + (data[i] << (8*(k-1)))	//Shift bytes
+		value = value + (data[i] << (8*(i-1)))	//Shift bytes
 	};
 	return value;
 }
