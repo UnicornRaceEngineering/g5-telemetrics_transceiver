@@ -1,0 +1,1 @@
+rm canparser.py canparser.o canparser_wrap.o _canparser.so
