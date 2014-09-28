@@ -1,0 +1,10 @@
+{
+  "name": "Unicorn Telemetrics Tranceiver",
+  "version": "0.0.1",
+  "description": "Unicorn Telemetrics Tranceiver",
+  "dependencies": {
+    "express": "^4.9.5",
+    "serialport": "^1.4.6",
+    "socket.io": "^1.1.0"
+  }
+}
