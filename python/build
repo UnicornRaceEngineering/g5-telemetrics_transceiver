@@ -1,4 +1,0 @@
-swig -python canparser.i
-gcc -fPIC -c canparser.c
-gcc -fPIC -c canparser.c canparser_wrap.c -I/usr/include/python3.4m
-gcc -shared canparser.o canparser_wrap.o -o _canparser.so
