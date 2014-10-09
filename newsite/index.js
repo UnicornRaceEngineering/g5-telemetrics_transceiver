@@ -9,7 +9,8 @@ var http = require('http').Server(app);
 var io = require('socket.io')(http);
 var SerialPort = require('serialport').SerialPort
 
-/* Global variabels */
+/* Global variables */
+
 // Open a connection to a serial port
 var serialport = new SerialPort("/dev/ttyUSB0", {
 	baudrate: 115200
@@ -17,7 +18,7 @@ var serialport = new SerialPort("/dev/ttyUSB0", {
 var clientsAmout = 0; // Keep statistics of the amount of connected clients
 var currentPack = new Package(); // The package which we are currently building
 
-// Defining the route handler /
+// Defining the route handler
 app.get('/', function(request, response){
 	response.sendFile(path.join(__dirname, 'index.html'));
 });
@@ -114,7 +115,7 @@ function Package(){
 			}
 		}
 
-		// We just read the start package and id is undefined. Thus current byte is our packge id
+		// We just read the start package and id is undefined. Thus current byte is our package id
 		if (self._id === undefined){
 			self._id = newByte;
 			printDebug("id: " + self._id);
