@@ -1,5 +1,7 @@
-/* Includes/Imports */
+// Enable/disable debug
+var debug = false;
 
+/* Includes/Imports */
 var path = require('path'); // init path so we can create paths using path.join()
 // init app using express to make app a function handler which we can parse on to the HTTP server
 var app = require('express')();
@@ -13,10 +15,10 @@ var serialport = new SerialPort("/dev/ttyUSB0", {
 	baudrate: 115200
 });
 var clientsAmout = 0; // Keep statistics of the amount of connected clients
+var currentPack = new Package(); // The package which we are currently building
 
 // Defining the route handler /
 app.get('/', function(request, response){
-	//response.send("Hello")
 	response.sendFile(path.join(__dirname, 'index.html'));
 });
 
@@ -51,26 +53,42 @@ http.listen(3000, function(){
 serialport.on('open', function(){
 	console.log('Serial port is now open');
 
-	// For debugging purpose
-	//while(1){
-		//var testPackage = new Buffer([0xA1, 0xB2, 0xC3, 0xD4, 0xE5, 0xF6, 0x0a, 0x0, 0x6, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6]);
-		//console.log(testPackage);
-		//ParsePackage(testPackage);
-	//}
-
+	// Event for received data
 	serialport.on('data', function(data){
-		// Data has been recieved.
+		// Data has been received.
 		// TODO: Handle data, using io.emit() to send data to clients.
 		//io.emit('rear wheel temp', data)
-		console.log(data);
+
 		ParsePackage(data);
 	});
 });
 
+var printDebug = function(msg){
+	if (debug)
+		console.log(msg);
+};
+
+// Parses the data buffer we are receiving from xbee
+var ParsePackage = function(data){
+	for(i = 0; i < data.length; i++){
+		var currentByte = data[i];
+		printDebug("Current byte: " + currentByte); // Let's see what we are reading
+		currentPack.AddByte(currentByte);
+		if (currentPack.IsFull()){
+			console.log("Package recieved");
+			console.log("Id: " + currentPack.GetId());
+			console.log(currentPack.GetBuffer());
+			console.log() // newline
+			currentPack = new Package();
+		}
+	}
+};
+
 function Package(){
+	// gives us the possibility to refer to our instance inside the functions
 	var self = this;
 
-	// private members
+	// members
 	self._id = undefined;
 	self._buffer = undefined;
 	self._bufferIndex = 0;
@@ -88,62 +106,64 @@ function Package(){
 				self._startSequenceIndex++;
 				return;
 			} else if (self._startSequenceIndex >= self._startSequence.length - 1){
-				console.log(self._startSequenceIndex >= self._startSequence.length - 1);
 				self._isStartSequenceFound = true;
-				console.log("Start sequence found");
+				printDebug("Start sequence found");
 			} else {
-				console.log("sequence index: " + self._startSequenceIndex);
+				printDebug("sequence index: " + self._startSequenceIndex);
+				return;
 			}
 		}
 
+		// We just read the start package and id is undefined. Thus current byte is our packge id
 		if (self._id === undefined){
 			self._id = newByte;
-			console.log("id: " + self._id);
+			printDebug("id: " + self._id);
 			return;
 		}
 
-		// Initialize the buffer containg the length of the package
+		// Initialize the buffer containing the length of the package
 		if (self._lengthBuffer === undefined){
 			self._lengthBuffer = new Buffer([0x0, 0x0]);
-			console.log("Log buffer Initialized");
+			printDebug("Log buffer Initialized");
 		}
 		
 		
 		// add the current byte to the length buffer, if length is not found yet
-		if (self._lengthBufferIndex <= self._lengthBuffer.length - 1){
-			console.log("Length byte" + self._lengthBufferIndex + ": " + newByte);
-			console.log("length index: " + self._lengthBufferIndex);
-			console.log(self._lengthBuffer);
+		if (self._lengthBufferIndex < self._lengthBuffer.length){
+			printDebug("Length byte" + self._lengthBufferIndex + ": " + newByte);
+			printDebug("length index: " + self._lengthBufferIndex);
+			printDebug(self._lengthBuffer);
 			self._lengthBuffer[self._lengthBufferIndex] = newByte;
 			self._lengthBufferIndex++;
 			return;
 		}
 
+		// if buffer in undefined we are about to receive a new package.
+		// prepare buffer by initializing it to the proper length
 		if (self._buffer === undefined){
 			// get buffer length
 			var n = self._lengthBuffer.readUInt16BE(0)
-			console.log("Length of package: " + n);
+			printDebug("Length of package: " + n);
 			self._buffer = new Buffer(n);
 			self._bufferIndex = 0;
 		}
 
-		if (self._bufferIndex <= self._buffer.length - 1){
+		// we are receiving byte for the package
+		if (self._bufferIndex < self._buffer.length){
+			printDebug("BufferIndex: " + self._bufferIndex);
+			printDebug("byte added: " + newByte);
+			printDebug(self._buffer);
 			self._buffer[self._bufferIndex] = newByte;
-			console.log("BufferIndex: " + self._bufferIndex);
-			console.log("byte added: " + newByte);
-			console.log(self._buffer);
 			self._bufferIndex++;
-		} else {
-			// package is full reset all values
+		} else { // package is full reset all values
 			self._id = undefined;
 			self._buffer = undefined;
 			self._bufferIndex = 0;
-			self._startSequence = [0xA1, 0xB2, 0xC3, 0xD4, 0xE5, 0xF6];
 			self._startSequenceIndex = 0;
 			self._isStartSequenceFound = false;
 			self._lengthBuffer = undefined;
 			self._lengthBufferIndex = 0;
-			console.log("bufferIndex out of range: " + self._bufferIndex);
+			printDebug("bufferIndex out of range: " + self._bufferIndex);
 		}
 	};
 	self.GetId = GetId;
@@ -161,43 +181,29 @@ function Package(){
 	self.IsFull = IsFull;
 	function IsFull(){
 		if (self._buffer === undefined){
-			console.log("is full: buffer undefined");
+			printDebug("Is full: buffer undefined");
 			return false;
 		}
 
 		if (self._bufferIndex === self._buffer.length) {
-			console.log("Is full: true");
+			printDebug("Is full: true");
 			return true;
 		} else {
-			console.log("Is full: false");
+			printDebug("Is full: false");
 			return false;
 		}
 	};
 
 	// private methods
+	// Determines whether the parsed byte is part of the start sequence at the current index
 	var isPartOfStartSequence = function(currentByte){
 		if (currentByte === self._startSequence[self._startSequenceIndex]){
-			console.log("part of start sequence: " + self._startSequenceIndex);
+			printDebug("part of start sequence: " + self._startSequenceIndex);
 			return true;
 		}
-		console.log("Not part of start sequence");
+		printDebug("Not part of start sequence");
 		return false;
 	};
 
 	return self;
-};
-
-var currentPack = new Package();
-
-var ParsePackage = function(data){
-	for(i = 0; i < data.length; i++){
-		var currentByte = data[i];
-		console.log("Current byte: " + currentByte); // Let's see what we are reading
-		currentPack.AddByte(currentByte);
-		if (currentPack.IsFull()){
-			console.log(currentPack.GetBuffer());
-			currentPack = new Package();
-		}
-		console.log() // newline
-	}
 };
