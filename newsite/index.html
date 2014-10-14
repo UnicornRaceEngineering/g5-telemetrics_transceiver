@@ -14,10 +14,11 @@
 		</style>
 	</head>
 	<body>
-		<ul id="messages"></ul>
-		<form action="">
-			<input id="m" autocomplete="off" /><button>Send</button>
-		</form>
+		<ul id="messages">
+			<li id="x"></li>
+			<li id="y"></li>
+			<li id="z"></li>
+		</ul>
 		<script src="/socket.io/socket.io.js"></script>
 		<script src="http://code.jquery.com/jquery-1.11.1.js"></script>
 		<script>
@@ -27,11 +28,18 @@
 				$('#m').val('');
 				return false;
 			});
+			document.getElementById('z').innerHtml = "haskhjsa";
 			socket.on('chat message', function(msg){
 				$('#messages').append($('<li>').text(msg));
 			});
-			socket.on('newdata', function(nwdat){
-				$('#messages').append($('<li>').text(nwdat));
+			socket.on('GX', function(nwdat){
+				document.getElementById('x').textContent = nwdat.name + " " + nwdat.value;
+			});
+			socket.on('GY', function(nwdat){
+				document.getElementById('y').textContent = nwdat.name + " " + nwdat.value;
+			});
+			socket.on('GZ', function(nwdat){
+				document.getElementById('z').textContent = nwdat.name + " " + nwdat.value;
 			});
 		</script>
 	</body>

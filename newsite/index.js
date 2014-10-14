@@ -8,6 +8,7 @@ var app = require('express')();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
 var SerialPort = require('serialport').SerialPort
+var dataType = require('./sensor_config')
 
 /* Global variables */
 
@@ -59,7 +60,6 @@ serialport.on('open', function(){
 		// Data has been received.
 		// TODO: Handle data, using io.emit() to send data to clients.
 		//io.emit('rear wheel temp', data)
-
 		ParsePackage(data);
 	});
 });
@@ -76,10 +76,20 @@ var ParsePackage = function(data){
 		printDebug("Current byte: " + currentByte); // Let's see what we are reading
 		currentPack.AddByte(currentByte);
 		if (currentPack.IsFull()){
+			
+			var sensorType = dataType.sensorConfig[currentPack.GetId()];
+			var sensor = {
+				name: sensorType.name,
+				value: currentPack.GetValue().toFixed(2),
+				timestamp: new Date().getTime()
+			};
+			// send data to client
 			console.log("Package recieved");
 			console.log("Id: " + currentPack.GetId());
 			console.log(currentPack.GetBuffer());
-			console.log() // newline
+			console.log(sensor);
+			console.log(); // newline
+			io.emit(sensor.name, sensor);
 			currentPack = new Package();
 		}
 	}
@@ -110,6 +120,8 @@ function Package(){
 				self._isStartSequenceFound = true;
 				printDebug("Start sequence found");
 			} else {
+				self._startSequenceIndex = 0;
+				self._isStartSequenceFound = false;
 				printDebug("sequence index: " + self._startSequenceIndex);
 				return;
 			}
@@ -125,7 +137,7 @@ function Package(){
 		// Initialize the buffer containing the length of the package
 		if (self._lengthBuffer === undefined){
 			self._lengthBuffer = new Buffer([0x0, 0x0]);
-			printDebug("Log buffer Initialized");
+			printDebug("Length buffer Initialized");
 		}
 		
 		
@@ -151,7 +163,7 @@ function Package(){
 
 		// we are receiving byte for the package
 		if (self._bufferIndex < self._buffer.length){
-			printDebug("BufferIndex: " + self._bufferIndex);
+			printDebug("BufferIndex: " + self._bufferIndex + " / " + self._buffer.length);
 			printDebug("byte added: " + newByte);
 			printDebug(self._buffer);
 			self._buffer[self._bufferIndex] = newByte;
@@ -174,6 +186,10 @@ function Package(){
 	self.GetLength = GetLength;
 	function GetLength(){
 		return self._buffer.length;
+	};
+	self.GetValue = GetValue;
+	function GetValue(){
+		return self._buffer.readFloatLE(0);
 	};
 	self.GetBuffer = GetBuffer;
 	function GetBuffer(){
