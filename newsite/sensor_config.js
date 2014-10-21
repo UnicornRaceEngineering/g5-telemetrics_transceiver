@@ -1,4 +1,9 @@
-// OBS nogle object navne er lavet me smA, ved ikke om der kan ske noget ved det...
+/* 	
+	This file contains an entry for each value sent from the car
+	If there is sent new data from the car this file should be extended
+*/
+
+
 exports.sensorConfig = {};
 // Data from MCU
 exports.sensorConfig[0] = {
@@ -284,4 +289,3 @@ exports.sensorConfig[67] = {
 	ID: 67,
 	value: 0
 };
-console.log(exports.sensorConfig[34]);
