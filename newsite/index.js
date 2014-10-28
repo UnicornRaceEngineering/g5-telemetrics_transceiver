@@ -20,9 +20,18 @@ var serialport = new SerialPort("/dev/ttyUSB0", {
 var clientsConnected = 0; // Keep statistics of the amount of connected clients
 var currentPack = new Package(); // The package which we are currently building
 
-// Defining the route handler
+// Defining the route handlers
 app.get('/', function(request, response){
 	response.sendFile(path.join(__dirname, 'index.html'));
+});
+app.get('/public/jquery-2.1.1.min.js', function(req, res){
+  res.sendFile(path.join(__dirname, '/public/jquery-2.1.1.min.js'));
+});
+app.get('/public/highcharts.js', function(req, res){
+  res.sendFile(path.join(__dirname, '/public/highcharts.js'));
+});
+app.get('/public/highcharts-more.js', function(req, res){
+  res.sendFile(path.join(__dirname, '/public/highcharts-more.js'));
 });
 
 // We hook up on the socket.io connection event.
