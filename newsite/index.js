@@ -5,13 +5,12 @@ var app = require('express')();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
 var SerialPort = require('serialport').SerialPort;
-var dataType = require('./sensor_config');
-var Parser = require('./parser').Parser();
+var Parser = require('./parser').Parser;
 
 // Open a connection to a serial port
 var serialport = new SerialPort("/dev/ttyUSB0", {
 	baudrate: 115200
-	parser: Parser.Parser;
+	parser: Parser;
 });
 var clientsConnected = 0; // Keep statistics of the amount of connected clients
 

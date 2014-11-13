@@ -1,7 +1,8 @@
 var debug = require('./debug');
+var dataType = require('./sensor_config');
 
 // Enable/disable debugging messages.
-debug.SetEnabled(false);
+debug.SetEnabled(true);
 debug.SetOutput(console.log);
 debug.SetLogLevel = debug.INFO;
 
@@ -137,9 +138,10 @@ function parserFactory(){
 	};
 
 
-	self.Parser = Parser;
+	self.Parser = Parser();
 	function Parser(){
 		var data = new Buffer(0);
+		var currentPack = new Package();
 		return function(emitter, buffer){
 			data = Buffer.concat([data, buffer]);
 			for(i = 0; i < data.length; i++){
@@ -158,8 +160,9 @@ function parserFactory(){
 					// send data to client
 					debug.Print("Package recieved", debug.INFO);
 					debug.Print("Id: " + currentPack.GetId(), debug.INFO);
-					debug.Print(currentPack.GetBuffer(), debug.INFO);
-					debug.Print(sensor, debug.INFO);
+					debug.Print(sensor.name, debug.INFO);
+					debug.Print(sensor.value, debug.INFO);
+					debug.Print(sensor.timestamp, debug.INFO);
 					debug.Print();
 					emitter.emit("package", sensor);
 					currentPack = new Package();
