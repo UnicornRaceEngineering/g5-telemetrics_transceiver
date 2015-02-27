@@ -20,7 +20,7 @@ function parserFactory(){
 		self._id = undefined;
 		self._buffer = undefined;
 		self._bufferIndex = 0;
-		self._startSequence = [0xA1, 0xB2, 0xC3, 0xD4, 0xE5, 0xF6];
+		self._startSequence = [0xA1, 0xB2, 0xC3];
 		self._startSequenceIndex = 0;
 		self._isStartSequenceFound = false;
 		self._lengthBuffer = undefined;
@@ -33,8 +33,7 @@ function parserFactory(){
 			Several other getter methods are available to retrieve specific fields
 			of a package when the package has been fully created.
 		*/
-		self.AddByte = AddByte;
-		function AddByte(newByte){
+		self.AddByte = function AddByte(newByte){
 			if (self._isStartSequenceFound === false){
 				if (isPartOfStartSequence(newByte)){
 					self._startSequenceIndex++;
@@ -92,28 +91,23 @@ function parserFactory(){
 		// Gets the id of the data package.
 		// This value is the id of the sensor in the Sensor config. Thus it can be used to retrive
 		// The sensor structure from this configuration.
-		self.GetId = GetId;
-		function GetId(){
+		self.GetId = function GetId(){
 			return self._id;
 		};
 		// Gets the length of the buffer
-		self.GetLength = GetLength;
-		function GetLength(){
+		self.GetLength = function GetLength(){
 			return self._buffer.length;
 		};
 		// Returns the value of the data package build in the buffer
-		self.GetValue = GetValue;
-		function GetValue(){
+		self.GetValue = function GetValue(){
 			return self._buffer.readFloatLE(0);
 		};
 		// Returns the buffer which is begin build in this class.
-		self.GetBuffer = GetBuffer;
-		function GetBuffer(){
+		self.GetBuffer = function GetBuffer(){
 			return self._buffer;
 		};
 		// Determines whether all bytes of the package has been added.
-		self.IsFull = IsFull;
-		function IsFull(){
+		self.IsFull = function IsFull(){
 			if (self._buffer === undefined){
 				return false;
 			}
@@ -128,18 +122,13 @@ function parserFactory(){
 		// private methods
 		// Determines whether the parsed byte is part of the start sequence at the correct index
 		var isPartOfStartSequence = function(currentByte){
-			if (currentByte === self._startSequence[self._startSequenceIndex]){
-				return true;
-			}
-			return false;
+			return (currentByte === self._startSequence[self._startSequenceIndex])
 		};
 
 		return self;
 	};
 
-
-	self.Parser = Parser();
-	function Parser(){
+	self.Parser = function Parser(){
 		var data = new Buffer(0);
 		var currentPack = new Package();
 		return function(emitter, buffer){
@@ -148,11 +137,11 @@ function parserFactory(){
 				var currentByte = data[i];
 				currentPack.AddByte(currentByte);
 				if (currentPack.IsFull()){ // our package is ready for dispatch to the client
-					
+
 					// Get the sensor type from the sensor config using the retrieved id from the package
 					var sensorType = dataType.sensorConfig[currentPack.GetId()];
 					// Create the sensor structure
-					var sensor = { 
+					var sensor = {
 						name: sensorType.name,
 						value: currentPack.GetValue().toFixed(2),
 						timestamp: new Date().getTime()
@@ -172,5 +161,5 @@ function parserFactory(){
 	};
 
 };
-	
+
 module.exports = new parserFactory();

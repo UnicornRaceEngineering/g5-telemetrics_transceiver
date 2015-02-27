@@ -1,16 +1,19 @@
 /* Includes/Imports */
 var path = require('path'); // init path so we can create paths using path.join()
+var os = require('os');
 // init app using express to make app a function handler which we can parse on to the HTTP server
 var app = require('express')();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
-var SerialPort = require('serialport').SerialPort;
-var Parser = require('./parser').Parser;
 
 // Open a connection to a serial port
-var serialport = new SerialPort("/dev/ttyUSB0", {
-	baudrate: 115200
-	parser: Parser;
+var ports = {
+	"linux": "/dev/ttyUSB0",
+	"darwin": "/dev/tty.usbserial-A900FLLE",
+}
+var serialport = new require('serialport').SerialPort(ports[os.platform()], {
+	baudrate: 115200,
+	parser: require('./parser').Parser,
 });
 var clientsConnected = 0; // Keep statistics of the amount of connected clients
 
@@ -57,7 +60,7 @@ serialport.on('open', function(){
 		io.emit(sensor.name, sensor);
 	});
 	// Error handling
-	serialPort.write("ls\n", function(err, results) {
+	serialport.write("ls\n", function(err, results) {
 		console.log('err ' + err);
 	});
 });
