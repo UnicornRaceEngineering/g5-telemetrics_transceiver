@@ -8,7 +8,6 @@ var app = require('express')();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
 var SerialPort = require('serialport').SerialPort;
-var Parser = require('./parser');
 
 require("serialport").list(function (err, ports) {
 	ports.forEach(function(port) {
@@ -23,7 +22,7 @@ var ports = {
 };
 var serialport = new SerialPort(ports[os.platform()], {
 	baudrate: 115200,
-	// parser: serialport.parsers.raw,
+	parser: require('./parser')(),
 });
 var clientsConnected = 0; // Keep statistics of the amount of connected clients
 
@@ -66,20 +65,9 @@ serialport.on('open', function(error) {
 	if (error) console.log(error);
 	console.log('Serial port is now open');
 
-	var parser = new Parser();
-	parser.on('data', function(data) {
-		io.emit('package', data);
-	});
-	parser.on('error', function(err) {
-		console.warn(err);
-	});
-
 	// Event for received data
 	serialport.on('data', function(data){
-		// flushTime = 5; // Reset the flush time
-		_.forEach(data, function(b) {
-			parser.addByte(b);
-		});
+		io.emit('data', data);
 	});
 
 

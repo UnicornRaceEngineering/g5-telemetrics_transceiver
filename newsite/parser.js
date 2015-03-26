@@ -15,13 +15,6 @@ var chksum = function(buff) {
 var Parser = function() {
 	var self = this;
 
-	self.MAX_PACKET_LENGTH = 1024 * 1024; // 1 mb
-
-	self.eventEmitter = new events.EventEmitter();
-	self.on = function(event, cb) {
-		self.eventEmitter.on(event, cb);
-	};
-
 	self.startSeqFound = false;
 	self.startSeqIndx = 0;
 
@@ -36,7 +29,7 @@ var Parser = function() {
 		self.startSeqFound = false;
 	};
 
-	self.addByte = function(b) {
+	self.addByte = function(b, cb) {
 		if (!self.startSeqFound) {
 			// Check if the current byte is part of the start sequence. If the
 			// sequence is broken reset and start over
@@ -64,9 +57,9 @@ var Parser = function() {
 					var recvChk = self.payload.pop();
 					var calcChk = chksum(self.payload);
 					if (recvChk !== calcChk) {
-						self.eventEmitter.emit('error', new Error("Invalid checksum. Got " + recvChk + " Expected " + calcChk));
+						cb(new Error("Invalid checksum. Got " + recvChk + " Expected " + calcChk), null);
 					} else {
-						self.eventEmitter.emit('data', new Buffer(self.payload));
+						cb(null, new Buffer(self.payload));
 					}
 					self.reset();
 				}
@@ -75,4 +68,20 @@ var Parser = function() {
 	};
 };
 
-module.exports = Parser;
+var factory = function() {
+	var parser = new Parser();
+
+	return function(emitter, buffer) {
+		_.forEach(buffer, function(n) {
+			parser.addByte(n, function(err, data) {
+				if (err) {
+					emitter.emit("error", err);
+				} else {
+					emitter.emit("data", data);
+				}
+			});
+		});
+	};
+};
+
+module.exports = factory;
