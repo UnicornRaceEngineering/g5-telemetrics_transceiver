@@ -12,18 +12,33 @@ var chksum = function(buff) {
 	}, 0);
 };
 
-var Parser = function() {
+var Parser = function(lenbufSize) {
 	var self = this;
+
+	self.lenbufSize = lenbufSize;
+	switch (self.lenbufSize) {
+		case 1:
+			self.readLen = function(buf) {
+				return buf.readUInt8();
+			};
+			break;
+		case 2:
+			self.readLen = function(buf) {
+				return buf.readUInt16LE();
+			};
+			break;
+		default: throw new Error("Unuseable length");
+	}
 
 	self.startSeqFound = false;
 	self.startSeqIndx = 0;
 
-	self.len = [];
+	self.lenbuf = [];
 	self.payload = [];
 	self.payloadSize = 0;
 
 	self.reset = function() {
-		self.len = [];
+		self.lenbuf = [];
 		self.payload = [];
 		self.payloadSize = 0;
 		self.startSeqFound = false;
@@ -45,10 +60,10 @@ var Parser = function() {
 			}
 		} else {
 			if (self.payloadSize === 0) {
-				if (self.len.length < 2) {
-					self.len.push(b);
+				if (self.lenbuf.length < self.lenbufSize) {
+					self.lenbuf.push(b);
 				} else {
-					self.payloadSize = new Buffer(self.len).readUInt16LE();
+					self.payloadSize = self.readLen(new Buffer(self.lenbuf));
 					self.payload.push(b);
 				}
 			} else {
@@ -69,7 +84,7 @@ var Parser = function() {
 };
 
 var factory = function() {
-	var parser = new Parser();
+	var parser = new Parser(1);
 
 	return function(emitter, buffer) {
 		_.forEach(buffer, function(n) {
