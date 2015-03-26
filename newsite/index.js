@@ -8,6 +8,7 @@ var app = require('express')();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
 var SerialPort = require('serialport').SerialPort;
+var schema = require("./schema");
 
 require("serialport").list(function (err, ports) {
 	ports.forEach(function(port) {
@@ -67,7 +68,9 @@ serialport.on('open', function(error) {
 
 	// Event for received data
 	serialport.on('data', function(data){
-		io.emit('data', data);
+		var pkt = schema.unpack(data);
+		console.log(pkt);
+		io.emit('data', pkt);
 	});
 
 
