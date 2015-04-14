@@ -20,6 +20,7 @@ require("serialport").list(function (err, ports) {
 var ports = {
 	"linux": "/dev/ttyUSB0",
 	"darwin": "/dev/tty.usbserial-A900FLLE",
+	"win32": "COM4",
 };
 var serialport = new SerialPort(ports[os.platform()], {
 	baudrate: 115200,
