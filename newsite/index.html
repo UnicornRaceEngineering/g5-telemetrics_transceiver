@@ -56,6 +56,9 @@
             socket.on('welcome', function(){
                 $('#messages').append($('<li>').text('A new user has connected'));
             });
+            socket.on('data', function(pkt){
+                socket.emit(pkt['name'], pkt['data']);
+            });
 
             $(function () {
                 $( "#sortable" ).sortable();
@@ -66,42 +69,58 @@
                         type: 'line'
                     },
                     title: {
-                        text: 'Budget vs spending',
-                        x: -80
-                    },
-                    pane: {
-                        size: '80%'
+                        text: 'G-force Meter'
                     },
                     xAxis: {
-                        categories: ['Sales', 'Marketing', 'Development', 'Customer Support',
-                                'Information Technology', 'Administration'],
+                        categories: ['X', 'Y', 'Z'],
                         tickmarkPlacement: 'on',
                         lineWidth: 0
                     },
                     yAxis: {
                         gridLineInterpolation: 'polygon',
                         lineWidth: 0,
-                        min: 0
+                        min: -3
                     },
                     tooltip: {
                         shared: true,
-                        pointFormat: '<span style="color:{series.color}">{series.name}: <b>${point.y:,.0f}</b><br/>'
+                        pointFormat: '<span style="color:{series.color}">{series.name}: <b>{point.y:,.0f}G</b><br/>'
                     },
-                    legend: {
+                    legend: {   
                         align: 'right',
                         verticalAlign: 'top',
                         y: 70,
                         layout: 'vertical'
                     },
                     series: [{
-                        name: 'Allocated Budget',
-                        data: [43000, 19000, 60000, 35000, 17000, 10000],
-                        pointPlacement: 'on'
+                        name: 'Pressure',
+                        data: [1, -2, 3],
+                        showInLegend: false
                     }, {
-                        name: 'Actual Spending',
-                        data: [50000, 39000, 42000, 31000, 26000, 14000],
-                        pointPlacement: 'on'
+                        name: '0 Axis',
+                        data: [0, 0, 0],
+                        color: '#FF0000',
+                        dashStyle: 'Dash',
+                        showInLegend: false
                     }]
+                },
+                //Update function for the XYZ axis. The three should almost be identical.
+                /* Doesn't work yet - object doesn't support property or method 'update'
+
+                function(chart) {
+                    var x, y, z;
+                    socket.on('GX', function(xVal) {
+                        x = Math.floor(xVal);   //Can it handle real numbers?
+                    });
+                    socket.on('GY', function(yVal) {
+                        y = Math.floor(yVal);
+                    });
+                    socket.on('GZ', function(zVal) {
+                        var x = Math.floor(zVal);
+                        var y = Math.floor(zVal);
+                        var z = Math.floor(zVal);
+                        chart.series[0].data[0].update([x,y,z]);
+                    });
+                */
                 });
 
                 //Fuel pressure chart
@@ -196,12 +215,12 @@
                 });
                 
                 //MakeGauge(divId, low, high, formatText, inputName, inputVal)
+               /*
                 console.log("Making chart");
                 console.log(socket);
                 var chart1 = MakeGauge('RoadSpeed2', 0, 200, 'km/h', 'Roadspeed2 (km/h)', 'velocity', socket);
                 console.log("Chart construction should have begun.");
-
-
+                */
 
                 //Revolutions per minute (RPM) chart
                 $('#RevoPerMin').highcharts({
