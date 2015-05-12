@@ -91,7 +91,7 @@ if(debug) {
 	}, 1000);
 
 	setInterval(function() {
-		var inputVal = Math.floor(Math.random() * 3);
+		var inputVal = Math.floor(Math.random() * 3)+2.5;
 	    
 	    io.emit('GX', inputVal);
 	}, 1000);
@@ -103,7 +103,7 @@ if(debug) {
 	}, 1000);
 
 	setInterval(function() {
-		var inputVal = Math.floor(Math.random() * 3);
+		var inputVal = Math.floor(Math.random() * 3)-2.5;
 	    
 	    io.emit('GZ', inputVal);
 	}, 1000);

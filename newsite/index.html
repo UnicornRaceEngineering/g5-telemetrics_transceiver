@@ -103,24 +103,21 @@
                         showInLegend: false
                     }]
                 },
-                //Update function for the XYZ axis. The three should almost be identical.
-                /* Doesn't work yet - object doesn't support property or method 'update'
-
+                //Update function for the XYZ axis.
                 function(chart) {
                     var x, y, z;
                     socket.on('GX', function(xVal) {
-                        x = Math.floor(xVal);   //Can it handle real numbers?
+                        x = xVal;
+                        chart.series[0].data[0].update([x]);
                     });
                     socket.on('GY', function(yVal) {
-                        y = Math.floor(yVal);
+                        y = yVal;
+                        chart.series[0].data[1].update([y]);
                     });
                     socket.on('GZ', function(zVal) {
-                        var x = Math.floor(zVal);
-                        var y = Math.floor(zVal);
-                        var z = Math.floor(zVal);
-                        chart.series[0].data[0].update([x,y,z]);
+                        z = zVal;
+                        chart.series[0].data[2].update([z]);
                     });
-                */
                 });
 
                 //Fuel pressure chart
