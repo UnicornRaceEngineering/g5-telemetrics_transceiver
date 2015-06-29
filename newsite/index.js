@@ -71,7 +71,7 @@ serialport.on('open', function(error) {
 	serialport.on('data', function(data){
 		var pkt = schema.unpack(data);
 		console.log(pkt);
-		io.emit('data', pkt);
+		io.emit(pkt.name, pkt.value);
 	});
 
 
@@ -86,25 +86,21 @@ var debug = false;
 if(debug) {
 	setInterval(function() {
 		var inputVal = (Math.random() - 0.5) * 20;
-	    
 	    io.emit('RoadSpeed (km/h)', inputVal);
 	}, 1000);
 
 	setInterval(function() {
 		var inputVal = Math.floor(Math.random() * 3)+2.5;
-	    
 	    io.emit('GX', inputVal);
 	}, 1000);
-	
+
 	setInterval(function() {
 		var inputVal = Math.floor(Math.random() * 3);
-	    
 	    io.emit('GY', inputVal);
 	}, 1000);
 
 	setInterval(function() {
 		var inputVal = Math.floor(Math.random() * 3)-2.5;
-	    
 	    io.emit('GZ', inputVal);
 	}, 1000);
 }
