@@ -20,6 +20,7 @@ require("serialport").list(function (err, ports) {
 var ports = {
 	"linux": "/dev/ttyUSB0",
 	"darwin": "/dev/tty.usbserial-A900FLLE",
+	"win32": "COM4",
 };
 var serialport = new SerialPort(ports[os.platform()], {
 	baudrate: 115200,
@@ -79,3 +80,31 @@ serialport.on('error', function(error){
 	//throw new Error(error);
 	console.log(error);
 });
+
+var debug = false;
+//Debug functions
+if(debug) {
+	setInterval(function() {
+		var inputVal = (Math.random() - 0.5) * 20;
+	    
+	    io.emit('RoadSpeed (km/h)', inputVal);
+	}, 1000);
+
+	setInterval(function() {
+		var inputVal = Math.floor(Math.random() * 3)+2.5;
+	    
+	    io.emit('GX', inputVal);
+	}, 1000);
+	
+	setInterval(function() {
+		var inputVal = Math.floor(Math.random() * 3);
+	    
+	    io.emit('GY', inputVal);
+	}, 1000);
+
+	setInterval(function() {
+		var inputVal = Math.floor(Math.random() * 3)-2.5;
+	    
+	    io.emit('GZ', inputVal);
+	}, 1000);
+}
