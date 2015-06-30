@@ -59,8 +59,7 @@ _.forEach(pktTypes, function(n, key) {
 });
 
 module.exports = {
-	unpack: function(buf) {
-		var pkts = [];
+	unpack: function(buf, cb) {
 		var i = 0;
 		while (i < buf.length) {
 			var pktType = buf.readUInt16LE(i);
@@ -68,18 +67,16 @@ module.exports = {
 
 			if (pktType >= pktTypes.ECU || pktTypes <= pktTypes.ECU_END) {
 				var ecuPktType = pktType - pktTypes.ECU;
-				pkts.push({
+				cb(null, {
 					name: ECUdata[ecuPktType],
 					value: buf.readFloatLE(i),
 				});
 				i += 4;
 			} else {
 				switch (pktType) {
-					default: throw "Unknown data type";
+					default: cb("Unknown data type at index " + i, null);
 				}
 			}
-
 		}
-		return pkts;
 	},
 };

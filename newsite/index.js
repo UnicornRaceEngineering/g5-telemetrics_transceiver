@@ -69,9 +69,11 @@ serialport.on('open', function(error) {
 
 	// Event for received data
 	serialport.on('data', function(data){
-		var pkt = schema.unpack(data);
-		console.log(pkt);
-		io.emit(pkt.name, pkt.value);
+		schema.unpack(data, function(err, pkt) {
+			if (err) throw err;
+			console.log(pkt);
+			io.emit(pkt.name, pkt.value);
+		});
 	});
 
 
@@ -81,7 +83,7 @@ serialport.on('error', function(error){
 	console.log(error);
 });
 
-var debug = false;
+var debug = true;
 //Debug functions
 if(debug) {
 	setInterval(function() {
