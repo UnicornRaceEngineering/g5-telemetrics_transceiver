@@ -41,6 +41,11 @@ app.get('/public/highcharts.js', function(req, res){
 app.get('/public/highcharts-more.js', function(req, res){
   res.sendFile(path.join(__dirname, '/public/highcharts-more.js'));
 });
+app.get('/underscore.js', function(req, res){
+  res.sendFile(path.join(__dirname, '/public/underscore.js'));
+});
+
+
 
 // We hook up on the socket.io connection event.
 io.on('connection', function(socket){
@@ -72,7 +77,7 @@ serialport.on('open', function(error) {
 		schema.unpack(data, function(err, pkt) {
 			if (err) throw err;
 			console.log(pkt);
-			io.emit(pkt.name, pkt.value);
+			io.emit('data', pkt);
 		});
 	});
 

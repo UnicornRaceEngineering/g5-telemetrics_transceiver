@@ -1,13 +1,14 @@
 <!doctype html>
 <html>
     <head>
-        <title>Socket.IO chat</title>
+        <title>Telemetry</title>
         <link  href="http://code.jquery.com/ui/1.11.3/themes/smoothness/jquery-ui.css" rel="stylesheet" />
         <script src="/socket.io/socket.io.js"></script>
         <script src="/public/jquery-2.1.1.min.js"></script>
         <script src="http://code.jquery.com/ui/1.11.3/jquery-ui.js"></script>
         <script src="/public/highcharts.js"></script>
         <script src="/public/highcharts-more.js"></script>
+        <script src="/underscore.js"></script>
         <style>
             * { margin: 0; padding: 0; box-sizing: border-box; }
             body { font: 13px Helvetica, Arial; width: 100%;}
@@ -17,297 +18,75 @@
             #messages li { padding: 5px 10px; }
             #messages li:nth-child(odd) { background: #eee; }
             #sortable {list-style-image: none; margin: 0; padding: 0; width: 100%;}
-            #sortable li { margin: 3px 3px 3px 0; padding: 1px; float: left; width: 24%; height: 270px; font-size: 2em; text-align: center; text-indent: center; }
+            #sortable li { margin: 1px 1px 1px 0; padding: 0px; float: left; width: 49%; height: 270px; font-size: 2em; text-align: center; text-indent: center; }
         </style>
     </head>
     <body>
         <ul id="sortable">
-          <li class="ui-state-default" id = "gpsloc">1</li>
-          <li class="ui-state-default" id = "RoadSpeed">2</li>
-          <li class="ui-state-default" id = "RoadSpeed2">Where does this go?</li>
-          <li class="ui-state-default" id = "RevoPerMin">4</li>
-          <li class="ui-state-default" id = "GearTemp">5</li>
-          <li class="ui-state-default" id = "FuelPress">6</li>
-          <li class="ui-state-default">7</li>
-          <li class="ui-state-default">8</li>
-          <li class="ui-state-default">9</li>
-          <li class="ui-state-default">10</li>
-          <li class="ui-state-default">11</li>
-          <li class="ui-state-default">12</li>
         </ul>
 
         <script>
             var socket = io();
         </script>
-        <script src="/graphconstructor.js"></script>
+        <!-- <script src="/graphconstructor.js"></script> -->
         <script>
             'use strict';
             function pad(width, string, padding) {
                   return (width <= string.length) ? string : pad(width, padding + string, padding)
             }
 
-            $('form').submit(function(){
-                socket.emit('chat message');
-                return false;
-            });
-            socket.on('chat message', function(msg){
-                $('#messages').append($('<li>').text(msg));
-            });
-            socket.on('welcome', function(){
-                $('#messages').append($('<li>').text('A new user has connected'));
-            });
+            function escapeNonWords(s) {
+                return s.replace(/[_\W]+/g, "-");
+            }
+
+            var plots = {}; // Map of sensor -> chart
+
             socket.on('data', function(pkt){
-                socket.emit(pkt['name'], pkt['data']);
-            });
-
-            $(function () {
-                $( "#sortable" ).sortable();
-                $( "#sortable" ).disableSelection();
-                $('#gpsloc').highcharts({
-                    chart: {
-                        polar: true,
-                        type: 'line'
-                    },
-                    title: {
-                        text: 'G-force Meter'
-                    },
-                    xAxis: {
-                        categories: ['X', 'Y', 'Z'],
-                        tickmarkPlacement: 'on',
-                        lineWidth: 0
-                    },
-                    yAxis: {
-                        gridLineInterpolation: 'polygon',
-                        lineWidth: 0,
-                        min: -3
-                    },
-                    tooltip: {
-                        shared: true,
-                        pointFormat: '<span style="color:{series.color}">{series.name}: <b>{point.y:,.0f}G</b><br/>'
-                    },
-                    legend: {   
-                        align: 'right',
-                        verticalAlign: 'top',
-                        y: 70,
-                        layout: 'vertical'
-                    },
-                    series: [{
-                        name: 'Pressure',
-                        data: [1, -2, 3],
-                        showInLegend: false
-                    }, {
-                        name: '0 Axis',
-                        data: [0, 0, 0],
-                        color: '#FF0000',
-                        dashStyle: 'Dash',
-                        showInLegend: false
-                    }]
-                },
-                //Update function for the XYZ axis.
-                function(chart) {
-                    var x, y, z;
-                    socket.on('GX', function(xVal) {
-                        x = xVal;
-                        chart.series[0].data[0].update([x]);
-                    });
-                    socket.on('GY', function(yVal) {
-                        y = yVal;
-                        chart.series[0].data[1].update([y]);
-                    });
-                    socket.on('GZ', function(zVal) {
-                        z = zVal;
-                        chart.series[0].data[2].update([z]);
-                    });
-                });
-
-                //Fuel pressure chart
-                $('#FuelPress').highcharts({
-                    chart: {
-                        type: 'line',
-                        animation: false
-                    },
-                    title: {
-                        text: 'Fuel Pressure'
-                    },
-                    yAxis: {
-                        max: 20,
-                        min: 0,
-                        alternateGridColor: '#FDFFD5',
-                        title: {
-                            text: 'Pressure'
-                        }
-                    },
-                    xAxis: {
-                        lineColor: '#FF0000', //Gives a red color to the xAxis line
-                        lineWidth: 1
-                    },
-                    series: [{
-                        name: 'Data',
-                        data: []
-                    }]
-                },
-                //Update function for the gearboard temperature chart
-                function(chart) {
-                    socket.on('Fuel Press.', function(fuelpress) {
-                        var y = Math.floor(fuelpress);
-                        chart.series[0].addPoint(fuelpress);
-                        if(chart.series[0].data.length >= 20){
-                            chart.series[0].data[0].remove();
-                        }
-                    });
-                });
-
-                //RoadSpeed (km/h) Chart
-                $('#RoadSpeed').highcharts({
-                    chart: {
-                        type: 'gauge'
-                    },
-                    title: {
-                        text: null
-                    },
-                    yAxis: {
-                        min: 0,
-                        max: 200,
-                    },
-                    series: [{
-                        name: 'Speed',
-                        data: [80],
-                        dataLabels: {
-                            formatter: function () {
-                                var kmh = this.y;
-                                kmh = pad(3, kmh.toString(), '0')
-                                return '<span style="color:#339>'+ kmh + ' km/h</span><br/>';
-                            },
-                            backgroundColor: {
-                                linearGradient: {
-                                    x1: 0,
-                                    y1: 0,
-                                    x2: 0,
-                                    y2: 1
-                                },
-                                stops: [
-                                    [0, '#DDD'],
-                                    [1, '#FFF']
-                                ]
-                            }
+                if (pkt.name in plots) {
+                    // Update the plot
+                    var shift = plots[pkt.name].series[0].data.length > 20;
+                    plots[pkt.name].series[0].addPoint(pkt.value, true, shift);
+                } else {
+                    // Element does not exists, create it
+                    $('#sortable').append('<li class="ui-state-default" id="' + escapeNonWords(pkt.name) + '">');
+                    plots[pkt.name] = new Highcharts.Chart({
+                        chart: {
+                            renderTo: escapeNonWords(pkt.name),
+                            defaultSeriesType: 'spline',
+                            valueDecimals: 2,
+                            animation: false,
                         },
-                        tooltip: {
-                            enabled: false
-                        }
-                    }]
-                },
-                // Update function for the speed gauge
-                function(chart) {
-                    socket.on('RoadSpeed (km/h)', function(velocity) {
-                        var point = chart.series[0].points[0],
-                            newVal, inc = Math.round(velocity);
-                
-                        newVal = point.y + inc;
-                        if (newVal < 0 || newVal > 200) {
-                            newVal = point.y - inc;
-                        }
-                
-                        point.update(newVal);
-                    });
-                });
-                
-                //MakeGauge(divId, low, high, formatText, inputName, inputVal)
-               /*
-                console.log("Making chart");
-                console.log(socket);
-                var chart1 = MakeGauge('RoadSpeed2', 0, 200, 'km/h', 'Roadspeed2 (km/h)', 'velocity', socket);
-                console.log("Chart construction should have begun.");
-                */
-
-                //Revolutions per minute (RPM) chart
-                $('#RevoPerMin').highcharts({
-                    chart: {
-                        type: 'gauge'
-                    },
-                    title: {
-                        text: null
-                    },
-                    yAxis: {
-                        min: 0,
-                        max: 200,
-                    },
-                    series: [{
-                        name: 'RPM',
-                        data: [80],
-                        dataLabels: {
-                            formatter: function () {
-                                var kmh = this.y;
-                                kmh = pad(3, kmh.toString(), '0')
-                                return '<span style="color:#339">'+ kmh + ' RPM</span><br/>';
-                            },
-                            backgroundColor: {
-                                linearGradient: {
-                                    x1: 0,
-                                    y1: 0,
-                                    x2: 0,
-                                    y2: 1
-                                },
-                                stops: [
-                                    [0, '#DDD'],
-                                    [1, '#FFF']
-                                ]
-                            }
-                        },
-                        tooltip: {
-                            enabled: false
-                        }
-                    }]
-                },
-                // Update function for the RPM gauge
-                function(chart) {
-                    socket.on('RPM', function(velocity) {
-                        var point = chart.series[0].points[0],
-                            newVal, inc = Math.round(velocity);
-                
-                        newVal = point.y + inc;
-                        if (newVal < 0 || newVal > 200) {
-                            newVal = point.y - inc;
-                        }
-                
-                        point.update(newVal);
-                    });
-                });
-                
-                //Gearboard chart
-                $('#GearTemp').highcharts({
-                    chart: {
-                        type: 'line',
-                        animation: false
-                    },
-                    title: {
-                        text: 'Gearboard Temperature'
-                    },
-                    yAxis: {
-                        max: 100,
-                        min: 0,
-                        alternateGridColor: '#FDFFD5',
                         title: {
-                            text: 'Temperature'
-                        }
-                    },
-                    xAxis: {
-                        lineColor: '#FF0000', //Gives a red color to the xAxis line
-                        lineWidth: 1
-                    },
-                    series: [{
-                        name: 'Data',
-                        data: []
-                    }]
-                },
-                //Update function for the gearboard temperature chart
-                function(chart) {
-                    socket.on('GearBoard temp.', function(geartemp) {
-                        var y = Math.floor(geartemp);
-                        chart.series[0].addPoint(geartemp);
-                        if(chart.series[0].data.length >= 20){
-                            chart.series[0].data[0].remove();
-                        }
+                            text: _.escape(pkt.name),
+                        },
+                        xAxis: {
+                            labels: {
+                                format: '{value:.2f}',
+                            },
+                        },
+                        yAxis: {
+                            title: {
+                                text: 'Value',
+                            },
+                            labels: {
+                                format: '{value:.2f}'
+                            },
+                        },
+                        plotOptions: {
+                            series: {
+                                enableMouseTracking: true,
+                                allowPointSelect: false,
+                            },
+                        },
+                        series: [{
+                            name: _.escape(pkt.name),
+                            data: [pkt.value],
+                        }],
                     });
+                }
+                $(function() {
+                    $("#sortable").sortable();
+                    $("#sortable").disableSelection();
                 });
             });
         </script>
