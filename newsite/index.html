@@ -4,41 +4,36 @@
         <title>Telemetry</title>
         <link  href="http://code.jquery.com/ui/1.11.3/themes/smoothness/jquery-ui.css" rel="stylesheet" />
         <script src="/socket.io/socket.io.js"></script>
-        <script src="/public/jquery-2.1.1.min.js"></script>
+        <script src="/jquery-2.1.1.min.js"></script>
         <script src="http://code.jquery.com/ui/1.11.3/jquery-ui.js"></script>
-        <script src="/public/highcharts.js"></script>
-        <script src="/public/highcharts-more.js"></script>
+        <script src="/highcharts.js"></script>
+        <script src="/highcharts-more.js"></script>
         <script src="/underscore.js"></script>
         <style>
             * { margin: 0; padding: 0; box-sizing: border-box; }
             body { font: 13px Helvetica, Arial; width: 100%;}
-            form { background: #000; padding: 3px; position: fixed; left: 100px; bottom: 0; width: 90px; height: 40px; }
-            form button { width: 100%; background: rgb(130, 224, 255); border: none; padding: 10px; }
-            #messages { list-style-type: none; margin: 0; padding: 0; }
-            #messages li { padding: 5px 10px; }
-            #messages li:nth-child(odd) { background: #eee; }
-            #sortable {list-style-image: none; margin: 0; padding: 0; width: 100%;}
-            #sortable li { margin: 1px 1px 1px 0; padding: 0px; float: left; width: 49%; height: 270px; font-size: 2em; text-align: center; text-indent: center; }
+
+            #plots {list-style-image: none; margin: 0; padding: 0; width: 100%;}
+            #plots li { margin: 1px 1px 1px 0; padding: 0px; float: left; width: 49%; height: 270px; font-size: 2em; text-align: center; text-indent: center; }
         </style>
     </head>
     <body>
-        <ul id="sortable">
+        <ul id="plots">
+        <!-- All plots are dynamically created here as: -->
+        <!-- <li class="ui-state-default" id="sensor-name"></li> -->
         </ul>
 
         <script>
-            var socket = io();
-        </script>
-        <!-- <script src="/graphconstructor.js"></script> -->
-        <script>
             'use strict';
             function pad(width, string, padding) {
-                  return (width <= string.length) ? string : pad(width, padding + string, padding)
+                  return (width <= string.length) ? string : pad(width, padding + string, padding);
             }
 
             function escapeNonWords(s) {
                 return s.replace(/[_\W]+/g, "-");
             }
 
+            var socket = io();
             var plots = {}; // Map of sensor -> chart
 
             socket.on('data', function(pkt){
@@ -48,7 +43,7 @@
                     plots[pkt.name].series[0].addPoint(pkt.value, true, shift);
                 } else {
                     // Element does not exists, create it
-                    $('#sortable').append('<li class="ui-state-default" id="' + escapeNonWords(pkt.name) + '">');
+                    $('#plots').append('<li class="ui-state-default" id="' + escapeNonWords(pkt.name) + '">');
                     plots[pkt.name] = new Highcharts.Chart({
                         chart: {
                             renderTo: escapeNonWords(pkt.name),
@@ -85,8 +80,8 @@
                     });
                 }
                 $(function() {
-                    $("#sortable").sortable();
-                    $("#sortable").disableSelection();
+                    $("#plots").sortable();
+                    $("#plots").disableSelection();
                 });
             });
         </script>

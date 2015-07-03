@@ -4,7 +4,8 @@ var _ = require('lodash');
 var path = require('path'); // init path so we can create paths using path.join()
 var os = require('os');
 // init app using express to make app a function handler which we can parse on to the HTTP server
-var app = require('express')();
+var express = require('express');
+var app = express();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
 var SerialPort = require('serialport').SerialPort;
@@ -32,19 +33,8 @@ var clientsConnected = 0; // Keep statistics of the amount of connected clients
 app.get('/', function(request, response){
 	response.sendFile(path.join(__dirname, 'index.html'));
 });
-app.get('/public/jquery-2.1.1.min.js', function(req, res){
-  res.sendFile(path.join(__dirname, '/public/jquery-2.1.1.min.js'));
-});
-app.get('/public/highcharts.js', function(req, res){
-  res.sendFile(path.join(__dirname, '/public/highcharts.js'));
-});
-app.get('/public/highcharts-more.js', function(req, res){
-  res.sendFile(path.join(__dirname, '/public/highcharts-more.js'));
-});
-app.get('/underscore.js', function(req, res){
-  res.sendFile(path.join(__dirname, '/public/underscore.js'));
-});
 
+app.use(express.static(path.join(__dirname, 'public')));
 
 
 // We hook up on the socket.io connection event.
@@ -92,22 +82,30 @@ var debug = true;
 //Debug functions
 if(debug) {
 	setInterval(function() {
-		var inputVal = (Math.random() - 0.5) * 20;
-	    io.emit('RoadSpeed (km/h)', inputVal);
+		io.emit('data', {
+			name: 'RoadSpeed (km/h)',
+			value: (Math.random() - 0.5) * 20
+		});
 	}, 1000);
 
 	setInterval(function() {
-		var inputVal = Math.floor(Math.random() * 3)+2.5;
-	    io.emit('GX', inputVal);
+		io.emit('data', {
+			name: 'GX',
+			value: Math.floor(Math.random() * 3)+2.5
+		});
 	}, 1000);
 
 	setInterval(function() {
-		var inputVal = Math.floor(Math.random() * 3);
-	    io.emit('GY', inputVal);
+		io.emit('data', {
+			name: 'GY',
+			value: Math.floor(Math.random() * 3)
+		});
 	}, 1000);
 
 	setInterval(function() {
-		var inputVal = Math.floor(Math.random() * 3)-2.5;
-	    io.emit('GZ', inputVal);
+		io.emit('data', {
+			name: 'GZ',
+			value: Math.floor(Math.random() * 3)-2.5
+		});
 	}, 1000);
 }
