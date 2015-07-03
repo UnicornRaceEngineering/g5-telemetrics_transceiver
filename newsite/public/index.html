@@ -1,14 +1,17 @@
-<!doctype html>
+<!DOCTYPE html>
 <html>
     <head>
         <title>Telemetry</title>
-        <link  href="http://code.jquery.com/ui/1.11.3/themes/smoothness/jquery-ui.css" rel="stylesheet" />
+        <!-- <link  href="http://code.jquery.com/ui/1.11.3/themes/smoothness/jquery-ui.css" rel="stylesheet" /> -->
+        <link href="/css/vendor/jquery-ui.css" rel="stylesheet" />
+
         <script src="/socket.io/socket.io.js"></script>
-        <script src="/jquery-2.1.1.min.js"></script>
-        <script src="http://code.jquery.com/ui/1.11.3/jquery-ui.js"></script>
-        <script src="/highcharts.js"></script>
-        <script src="/highcharts-more.js"></script>
-        <script src="/underscore.js"></script>
+        <script src="/js/vendor/jquery-2.1.1.min.js"></script>
+        <!-- <script src="http://code.jquery.com/ui/1.11.3/jquery-ui.js"></script> -->
+        <script src="/js/vendor/jquery-ui.js"></script>
+        <script src="/js/vendor/highcharts.js"></script>
+        <script src="/js/vendor/highcharts-more.js"></script>
+        <script src="/js/vendor/underscore.js"></script>
         <style>
             * { margin: 0; padding: 0; box-sizing: border-box; }
             body { font: 13px Helvetica, Arial; width: 100%;}
@@ -18,16 +21,18 @@
         </style>
     </head>
     <body>
+        <header>
+            <h1>AAU Racing Telemetry</h1>
+        </header>
+
         <ul id="plots">
         <!-- All plots are dynamically created here as: -->
         <!-- <li class="ui-state-default" id="sensor-name"></li> -->
         </ul>
 
+
         <script>
             'use strict';
-            function pad(width, string, padding) {
-                  return (width <= string.length) ? string : pad(width, padding + string, padding);
-            }
 
             function escapeNonWords(s) {
                 return s.replace(/[_\W]+/g, "-");
@@ -39,7 +44,7 @@
             socket.on('data', function(pkt){
                 if (pkt.name in plots) {
                     // Update the plot
-                    var shift = plots[pkt.name].series[0].data.length > 20;
+                    var shift = plots[pkt.name].series[0].data.length > 50;
                     plots[pkt.name].series[0].addPoint(pkt.value, true, shift);
                 } else {
                     // Element does not exists, create it

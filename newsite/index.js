@@ -29,11 +29,6 @@ var serialport = new SerialPort(ports[os.platform()], {
 });
 var clientsConnected = 0; // Keep statistics of the amount of connected clients
 
-// Defining the route handlers
-app.get('/', function(request, response){
-	response.sendFile(path.join(__dirname, 'index.html'));
-});
-
 app.use(express.static(path.join(__dirname, 'public')));
 
 
@@ -86,26 +81,26 @@ if(debug) {
 			name: 'RoadSpeed (km/h)',
 			value: (Math.random() - 0.5) * 20
 		});
-	}, 1000);
+	}, 1000/6);
 
 	setInterval(function() {
 		io.emit('data', {
 			name: 'GX',
 			value: Math.floor(Math.random() * 3)+2.5
 		});
-	}, 1000);
+	}, 1000/6);
 
 	setInterval(function() {
 		io.emit('data', {
 			name: 'GY',
 			value: Math.floor(Math.random() * 3)
 		});
-	}, 1000);
+	}, 1000/6);
 
 	setInterval(function() {
 		io.emit('data', {
 			name: 'GZ',
 			value: Math.floor(Math.random() * 3)-2.5
 		});
-	}, 1000);
+	}, 1000/6);
 }
