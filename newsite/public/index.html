@@ -4,6 +4,7 @@
         <title>Telemetry</title>
         <!-- <link  href="http://code.jquery.com/ui/1.11.3/themes/smoothness/jquery-ui.css" rel="stylesheet" /> -->
         <link href="/css/vendor/jquery-ui.css" rel="stylesheet" />
+        <link rel="stylesheet" type="text/css" href="style.css">
 
         <script src="/socket.io/socket.io.js"></script>
         <script src="/js/vendor/jquery-2.1.1.min.js"></script>
@@ -12,24 +13,25 @@
         <script src="/js/vendor/highcharts.js"></script>
         <script src="/js/vendor/highcharts-more.js"></script>
         <script src="/js/vendor/underscore.js"></script>
-        <style>
-            * { margin: 0; padding: 0; box-sizing: border-box; }
-            body { font: 13px Helvetica, Arial; width: 100%;}
-
-            #plots {list-style-image: none; margin: 0; padding: 0; width: 100%;}
-            #plots li { margin: 1px 1px 1px 0; padding: 0px; float: left; width: 49%; height: 270px; font-size: 2em; text-align: center; text-indent: center; }
-        </style>
     </head>
     <body>
         <header>
             <h1>AAU Racing Telemetry</h1>
         </header>
 
-        <ul id="plots">
-        <!-- All plots are dynamically created here as: -->
-        <!-- <li class="ui-state-default" id="sensor-name"></li> -->
-        </ul>
+        <div class = "left">        
+            <ul id="rawlist">
+            <!-- All plots are dynamically listed here -->
+            <!-- <li class="ui-state-default" id="sensor-name"></li> -->
+            </ul>
+        </div>
 
+        <div class = "content">        
+            <ul id="plots">
+            <!-- All plots are dynamically created here as: -->
+            <!-- <li class="ui-state-default" id="sensor-name"></li> -->
+            </ul>
+        </div>
 
         <script>
             'use strict';
@@ -49,6 +51,7 @@
                 } else {
                     // Element does not exists, create it
                     $('#plots').append('<li class="ui-state-default" id="' + escapeNonWords(pkt.name) + '">');
+                    $('#rawlist').append('<li><input type="checkbox" class="ui-state-default" id="' + escapeNonWords(pkt.name) + '"><label for="' + escapeNonWords(pkt.name) + '">' + _.escape(pkt.name) + '</label><li>');
                     plots[pkt.name] = new Highcharts.Chart({
                         chart: {
                             renderTo: escapeNonWords(pkt.name),

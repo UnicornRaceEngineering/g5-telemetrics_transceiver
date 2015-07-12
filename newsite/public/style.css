@@ -1,0 +1,56 @@
+html {
+	margin: 0;
+	padding: 0;
+	box-sizing: border-box;
+}
+
+body { 
+	font: 13px Helvetica, Arial;
+	width: 100%;
+}
+    .left {
+        position:absolute;
+        left:0; top:92px; right: 0; bottom: 0;
+        width: 250px;
+    }
+    .content {
+        position: absolute;
+        left:250px; top:92px; right:0; bottom:0;
+    }
+
+#rawlist {
+	list-style-image: none;
+	float:left;
+	margin: 0;
+	padding: 0;
+	width: 100%;
+}
+
+#rawlist li {
+	margin: 1px 1px 1px 0;
+	padding: 0px;
+	float: left;
+	width: 200px;
+	height: 27px;
+	font-size: 2em;
+	text-align: center;
+	text-indent: center;
+}
+
+#plots {
+	list-style-image: none;
+	margin: 0;
+	padding: 0;
+	width: 100%;
+}
+
+#plots li {
+	margin: 1px 1px 1px 0;
+	padding: 0px;
+	float: left;
+	width: 49%;
+	height: 270px;
+	font-size: 2em;
+	text-align: center;
+	text-indent: center;
+}
