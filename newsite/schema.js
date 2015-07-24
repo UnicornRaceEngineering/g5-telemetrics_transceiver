@@ -51,8 +51,18 @@ _.forEach(ECUdata, function(n, key) {
 
 var pktTypes = {
 	ECU: 0,
+	LAST_ECU_PKT: 37,
+
+	"heart beat": 38,
+
+	"paddle status": 41,
+
+	"current gear": 42,
+	"neutral enabled": 43,
+
+	"front right wheel speed (km/h)": 44,
+	"front left wheel speed (km/h)": 45,
 };
-pktTypes.ECU_END = pktTypes.ECU + _.size(ECUdata/2); // Half because its a two way map
 // Create the inverse
 _.forEach(pktTypes, function(n, key) {
 	pktTypes[n] = key;
@@ -61,21 +71,37 @@ _.forEach(pktTypes, function(n, key) {
 module.exports = {
 	unpack: function(buf, cb) {
 		var i = 0;
+
 		while (i < buf.length) {
 			var pktType = buf.readUInt16LE(i);
 			i += 2;
 
-			if (pktType >= pktTypes.ECU || pktTypes <= pktTypes.ECU_END) {
+			if ((pktType >= pktTypes.ECU) && (pktType <= pktTypes.LAST_ECU_PKT)) {
 				var ecuPktType = pktType - pktTypes.ECU;
 				cb(null, {
-					name: ECUdata[ecuPktType],
+					name: "ECU " + ECUdata[ecuPktType],
 					value: buf.readFloatLE(i),
 				});
 				i += 4;
 			} else {
+				var pkt = {name: pktTypes[pktType]};
 				switch (pktType) {
-					default: cb("Unknown data type at index " + i, null);
+					case pktTypes.PADDLE_STATUS:
+					case pktTypes.CURRENT_GEAR:
+					case pktTypes.NEUTRAL_ENABLED:
+					case pktTypes.HEART_BEAT:
+						pkt.value = buf.readUInt8(i);
+						i += 1;
+						break;
+
+					case pktTypes.FRONT_RIGHT_WHEEL_SPEED:
+					case pktTypes.FRONT_LEFT_WHEEL_SPEED:
+						pkt.value = buf.readFloatLE(i);
+						i += 4;
+						break;
+					default: cb("Unknown pkt type " + pktType + " at index " + i, pkt); continue;
 				}
+				cb(null, pkt);
 			}
 		}
 	},
