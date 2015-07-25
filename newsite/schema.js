@@ -86,16 +86,16 @@ module.exports = {
 			} else {
 				var pkt = {name: pktTypes[pktType]};
 				switch (pktType) {
-					case pktTypes.PADDLE_STATUS:
-					case pktTypes.CURRENT_GEAR:
-					case pktTypes.NEUTRAL_ENABLED:
-					case pktTypes.HEART_BEAT:
+					case pktTypes["paddle status"]:
+					case pktTypes["current gear"]:
+					case pktTypes["neutral enabled"]:
+					case pktTypes["heart beat"]:
 						pkt.value = buf.readUInt8(i);
 						i += 1;
 						break;
 
-					case pktTypes.FRONT_RIGHT_WHEEL_SPEED:
-					case pktTypes.FRONT_LEFT_WHEEL_SPEED:
+					case pktTypes["front right wheel speed (km/h)"]:
+					case pktTypes["front left wheel speed (km/h)"]:
 						pkt.value = buf.readFloatLE(i);
 						i += 4;
 						break;
