@@ -43,6 +43,12 @@ io.on('connection', function(socket){
 		console.log("a client disconnected");
 		console.log("Total: " + clientsConnected);
 	});
+
+	socket.on("req", function(data) {
+		console.log("fewjiofew", data)
+		var d = new Buffer(data);
+		serialport.write(d);
+	});
 });
 
 // We make the http server listen to port 3000
@@ -61,7 +67,7 @@ serialport.on('open', function(error) {
 	serialport.on('data', function(data){
 		schema.unpack(data, function(err, pkt) {
 			if (err) throw err;
-			console.log(pkt);
+			console.log(pkt, ",");
 			io.emit('data', pkt);
 		});
 	});

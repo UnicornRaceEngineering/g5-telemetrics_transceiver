@@ -48,7 +48,7 @@ _.forEach(ECUdata, function(n, key) {
 	ECUdata[n] = key;
 });
 
-
+var REQUEST_OFFSET = 47
 var pktTypes = {
 	ECU: 0,
 	LAST_ECU_PKT: 37,
@@ -62,11 +62,16 @@ var pktTypes = {
 
 	"front right wheel speed (km/h)": 44,
 	"front left wheel speed (km/h)": 45,
+
+	"request log": REQUEST_OFFSET + 1,
+	"request num log": REQUEST_OFFSET + 2,
 };
 // Create the inverse
 _.forEach(pktTypes, function(n, key) {
 	pktTypes[n] = key;
 });
+
+var multiPackage = [];
 
 module.exports = {
 	unpack: function(buf, cb) {
@@ -99,6 +104,34 @@ module.exports = {
 						pkt.value = buf.readFloatLE(i);
 						i += 4;
 						break;
+
+					case pktTypes["request log"]:
+					case pktTypes["request num log"]:
+						var n = buf.readUInt32LE(i);
+						i += 4;
+						var chunk = buf.slice(i);
+
+						if (n != 0) {
+							multiPackage.push({n:n, chunk:chunk});
+						} else {
+							// End of multi package
+
+							pkt.value = Buffer.concat(_.pluck(multiPackage, "chunk"))
+							// TODO: recursivly call unpack on the buffer
+
+							err = null;
+							for (var i = 0; i < multiPackage.length; i++) {
+								if (multiPackage[i].n != i+1) {
+									err = "Multi package missed,", multiPackage[i].n, "!=", i+1;
+									break;
+								}
+							}
+							multiPackage = [] // reset
+
+							cb(err, pkt);
+						}
+						return // As the rest of the package is payload
+
 					default: cb("Unknown pkt type " + pktType + " at index " + i, pkt); continue;
 				}
 				cb(null, pkt);
