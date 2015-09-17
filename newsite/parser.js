@@ -65,6 +65,7 @@ var Parser = function(lenbufSize) {
 				} else {
 					self.payloadSize = self.readLen(new Buffer(self.lenbuf));
 					self.payload.push(b);
+					if (self.payloadSize === 1) self.reset() // received an empty payload containing only chksum
 				}
 			} else {
 				self.payload.push(b);
