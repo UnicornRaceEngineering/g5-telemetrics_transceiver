@@ -75,7 +75,7 @@ var multiPackage = [];
 var recvMultiPkt = function(buf, cb) {
 	var n = buf.readUInt32LE(0);
 	var chunk = buf.slice(4);
-console.log(chunk)
+
 	if (n != 0) {
 		multiPackage.push({n:n, chunk:chunk});
 	} else {
@@ -105,11 +105,12 @@ var unpack = function(buf, cb) {
 
 		if ((pktType >= pktTypes.ECU) && (pktType <= pktTypes.LAST_ECU_PKT)) {
 			var ecuPktType = pktType - pktTypes.ECU;
-			cb(null, {
+			var pkt = {
 				name: "ECU " + ECUdata[ecuPktType],
 				value: buf.readFloatLE(i),
-			});
+			};
 			i += 4;
+			cb(null, pkt, i);
 		} else {
 			var pkt = {name: pktTypes[pktType]};
 			switch (pktType) {
@@ -119,14 +120,14 @@ var unpack = function(buf, cb) {
 				case pktTypes["heart beat"]:
 					pkt.value = buf.readUInt8(i);
 					i += 1;
-					cb(null, pkt);
+					cb(null, pkt, i);
 					break;
 
 				case pktTypes["front right wheel speed (km/h)"]:
 				case pktTypes["front left wheel speed (km/h)"]:
 					pkt.value = buf.readFloatLE(i);
 					i += 4;
-					cb(null, pkt);
+					cb(null, pkt, i);
 					break;
 
 				case pktTypes["request log"]:
@@ -136,9 +137,11 @@ var unpack = function(buf, cb) {
 					recvMultiPkt(b, function(err, data) {
 						pkt.value = [];
 
-						unpack(data, function(err, dataPoint) {
+						unpack(data, function(err, dataPoint, progress) {
 							pkt.value.push(dataPoint);
-							cb(err, pkt); // TODO because unpack calls its callback for each data point found this will result in multiple growing lists. Therefor we must refactor unpack so it gives a list of packages to its call back.
+							if (progress === data.length) {
+								cb(err, pkt, i);
+							}
 						});
 					});
 					break;
@@ -149,7 +152,7 @@ var unpack = function(buf, cb) {
 
 					recvMultiPkt(b, function(err, data) {
 						pkt.value = data;
-						cb(err, pkt);
+						cb(err, pkt, i);
 					});
 					break;
 
