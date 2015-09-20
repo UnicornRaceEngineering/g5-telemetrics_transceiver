@@ -72,70 +72,94 @@ _.forEach(pktTypes, function(n, key) {
 });
 
 var multiPackage = [];
+var recvMultiPkt = function(buf, cb) {
+	var n = buf.readUInt32LE(0);
+	var chunk = buf.slice(4);
+console.log(chunk)
+	if (n != 0) {
+		multiPackage.push({n:n, chunk:chunk});
+	} else {
+		// End of multi package
 
-module.exports = {
-	unpack: function(buf, cb) {
-		var i = 0;
+		var pkt = Buffer.concat(_.pluck(multiPackage, "chunk"))
 
-		while (i < buf.length) {
-			var pktType = buf.readUInt16LE(i);
-			i += 2;
-
-			if ((pktType >= pktTypes.ECU) && (pktType <= pktTypes.LAST_ECU_PKT)) {
-				var ecuPktType = pktType - pktTypes.ECU;
-				cb(null, {
-					name: "ECU " + ECUdata[ecuPktType],
-					value: buf.readFloatLE(i),
-				});
-				i += 4;
-			} else {
-				var pkt = {name: pktTypes[pktType]};
-				switch (pktType) {
-					case pktTypes["paddle status"]:
-					case pktTypes["current gear"]:
-					case pktTypes["neutral enabled"]:
-					case pktTypes["heart beat"]:
-						pkt.value = buf.readUInt8(i);
-						i += 1;
-						break;
-
-					case pktTypes["front right wheel speed (km/h)"]:
-					case pktTypes["front left wheel speed (km/h)"]:
-						pkt.value = buf.readFloatLE(i);
-						i += 4;
-						break;
-
-					case pktTypes["request log"]:
-					case pktTypes["request num log"]:
-						var n = buf.readUInt32LE(i);
-						i += 4;
-						var chunk = buf.slice(i);
-
-						if (n != 0) {
-							multiPackage.push({n:n, chunk:chunk});
-						} else {
-							// End of multi package
-
-							pkt.value = Buffer.concat(_.pluck(multiPackage, "chunk"))
-							// TODO: recursivly call unpack on the buffer
-
-							err = null;
-							for (var i = 0; i < multiPackage.length; i++) {
-								if (multiPackage[i].n != i+1) {
-									err = "Multi package missed,", multiPackage[i].n, "!=", i+1;
-									break;
-								}
-							}
-							multiPackage = [] // reset
-
-							cb(err, pkt);
-						}
-						return // As the rest of the package is payload
-
-					default: cb("Unknown pkt type " + pktType + " at index " + i, pkt); continue;
-				}
-				cb(null, pkt);
+		var err = null;
+		for (var i = 0; i < multiPackage.length; i++) {
+			if (multiPackage[i].n != i+1) {
+				err = "Multi package missed,", multiPackage[i].n, "!=", i+1;
+				break;
 			}
 		}
-	},
+		multiPackage = [] // reset
+
+		cb(err, pkt);
+	}
+}
+
+var unpack = function(buf, cb) {
+	var i = 0;
+
+	while (i < buf.length) {
+		var pktType = buf.readUInt16LE(i);
+		i += 2;
+
+		if ((pktType >= pktTypes.ECU) && (pktType <= pktTypes.LAST_ECU_PKT)) {
+			var ecuPktType = pktType - pktTypes.ECU;
+			cb(null, {
+				name: "ECU " + ECUdata[ecuPktType],
+				value: buf.readFloatLE(i),
+			});
+			i += 4;
+		} else {
+			var pkt = {name: pktTypes[pktType]};
+			switch (pktType) {
+				case pktTypes["paddle status"]:
+				case pktTypes["current gear"]:
+				case pktTypes["neutral enabled"]:
+				case pktTypes["heart beat"]:
+					pkt.value = buf.readUInt8(i);
+					i += 1;
+					cb(null, pkt);
+					break;
+
+				case pktTypes["front right wheel speed (km/h)"]:
+				case pktTypes["front left wheel speed (km/h)"]:
+					pkt.value = buf.readFloatLE(i);
+					i += 4;
+					cb(null, pkt);
+					break;
+
+				case pktTypes["request log"]:
+					var b = buf.slice(i)
+					i += b.length;
+
+					recvMultiPkt(b, function(err, data) {
+						pkt.value = [];
+
+						unpack(data, function(err, dataPoint) {
+							pkt.value.push(dataPoint);
+							cb(err, pkt); // TODO because unpack calls its callback for each data point found this will result in multiple growing lists. Therefor we must refactor unpack so it gives a list of packages to its call back.
+						});
+					});
+					break;
+
+				case pktTypes["request num log"]:
+					var b = buf.slice(i)
+					i += b.length;
+
+					recvMultiPkt(b, function(err, data) {
+						pkt.value = data;
+						cb(err, pkt);
+					});
+					break;
+
+				default: cb("Unknown pkt type " + pktType + " at index " + i, pkt); continue;
+			}
+
+		}
+	}
+};
+
+module.exports = {
+	unpack: unpack,
 };
