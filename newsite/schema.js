@@ -65,6 +65,7 @@ var pktTypes = {
 
 	"request log": REQUEST_OFFSET + 1,
 	"request num log": REQUEST_OFFSET + 2,
+	"label": REQUEST_OFFSET + 3,
 };
 // Create the inverse
 _.forEach(pktTypes, function(n, key) {
@@ -135,6 +136,10 @@ var unpack = function(buf, cb) {
 					i += b.length;
 
 					recvMultiPkt(b, function(err, data) {
+						if (err != null) {
+							cb(err, pkt, i);
+							return;
+						}
 						pkt.value = [];
 
 						unpack(data, function(err, dataPoint, progress) {
@@ -154,6 +159,15 @@ var unpack = function(buf, cb) {
 						pkt.value = data;
 						cb(err, pkt, i);
 					});
+					break;
+
+				case pktTypes["label"]:
+					var start = i;
+					while (buf[i++] != 0);
+					var end = i;
+
+					pkt.value = label = buf.toString('ascii', start, end);
+					cb(null, pkt, i);
 					break;
 
 				default: cb("Unknown pkt type " + pktType + " at index " + i, pkt); continue;
