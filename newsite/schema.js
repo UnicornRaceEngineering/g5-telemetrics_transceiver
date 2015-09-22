@@ -76,6 +76,8 @@ var multiPackage = [];
 var recvMultiPkt = function(buf, cb) {
 	var n = buf.readUInt32LE(0);
 	var chunk = buf.slice(4);
+console.log(chunk)
+	// TODO send back n as an ack
 
 	if (n != 0) {
 		multiPackage.push({n:n, chunk:chunk});
@@ -164,9 +166,9 @@ var unpack = function(buf, cb) {
 				case pktTypes["label"]:
 					var start = i;
 					while (buf[i++] != 0);
-					var end = i;
+					var end = i-1;
 
-					pkt.value = label = buf.toString('ascii', start, end);
+					pkt.value = buf.toString('ascii', start, end);
 					cb(null, pkt, i);
 					break;
 
