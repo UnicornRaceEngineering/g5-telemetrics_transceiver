@@ -66,6 +66,8 @@ var pktTypes = {
 	"request log": REQUEST_OFFSET + 1,
 	"request num log": REQUEST_OFFSET + 2,
 	"label": REQUEST_OFFSET + 3,
+
+	"system time": 100, //51,
 };
 // Create the inverse
 _.forEach(pktTypes, function(n, key) {
@@ -101,81 +103,92 @@ console.log(chunk)
 
 var unpack = function(buf, cb) {
 	var i = 0;
+	try {
+		while (i < buf.length) {
+			var pktType = buf.readUInt16LE(i);
+			i += 2;
 
-	while (i < buf.length) {
-		var pktType = buf.readUInt16LE(i);
-		i += 2;
+			if ((pktType >= pktTypes.ECU) && (pktType <= pktTypes.LAST_ECU_PKT)) {
+				var ecuPktType = pktType - pktTypes.ECU;
+				var pkt = {
+					name: "ECU " + ECUdata[ecuPktType],
+					value: buf.readFloatLE(i),
+				};
+				i += 4;
+				cb(null, pkt, i);
+			} else {
+				var pkt = {name: pktTypes[pktType]};
+				switch (pktType) {
+					case pktTypes["paddle status"]:
+					case pktTypes["current gear"]:
+					case pktTypes["neutral enabled"]:
+					case pktTypes["heart beat"]:
+						pkt.value = buf.readUInt8(i);
+						i += 1;
+						cb(null, pkt, i);
+						break;
 
-		if ((pktType >= pktTypes.ECU) && (pktType <= pktTypes.LAST_ECU_PKT)) {
-			var ecuPktType = pktType - pktTypes.ECU;
-			var pkt = {
-				name: "ECU " + ECUdata[ecuPktType],
-				value: buf.readFloatLE(i),
-			};
-			i += 4;
-			cb(null, pkt, i);
-		} else {
-			var pkt = {name: pktTypes[pktType]};
-			switch (pktType) {
-				case pktTypes["paddle status"]:
-				case pktTypes["current gear"]:
-				case pktTypes["neutral enabled"]:
-				case pktTypes["heart beat"]:
-					pkt.value = buf.readUInt8(i);
-					i += 1;
-					cb(null, pkt, i);
-					break;
+					case pktTypes["front right wheel speed (km/h)"]:
+					case pktTypes["front left wheel speed (km/h)"]:
+						pkt.value = buf.readFloatLE(i);
+						i += 4;
+						cb(null, pkt, i);
+						break;
 
-				case pktTypes["front right wheel speed (km/h)"]:
-				case pktTypes["front left wheel speed (km/h)"]:
-					pkt.value = buf.readFloatLE(i);
-					i += 4;
-					cb(null, pkt, i);
-					break;
+					case pktTypes["request log"]:
+						var b = buf.slice(i)
+						i += b.length;
 
-				case pktTypes["request log"]:
-					var b = buf.slice(i)
-					i += b.length;
-
-					recvMultiPkt(b, function(err, data) {
-						if (err != null) {
-							cb(err, pkt, i);
-							return;
-						}
-						pkt.value = [];
-
-						unpack(data, function(err, dataPoint, progress) {
-							pkt.value.push(dataPoint);
-							if (progress === data.length) {
+						recvMultiPkt(b, function(err, data) {
+							if (err != null) {
 								cb(err, pkt, i);
+								return;
 							}
+							pkt.value = [];
+
+							unpack(data, function(err, dataPoint, progress) {
+								pkt.value.push(dataPoint);
+								if (progress === data.length) {
+									cb(err, pkt, i);
+								}
+							});
 						});
-					});
-					break;
+						break;
 
-				case pktTypes["request num log"]:
-					var b = buf.slice(i)
-					i += b.length;
+					case pktTypes["request num log"]:
+						var b = buf.slice(i)
+						i += b.length;
 
-					recvMultiPkt(b, function(err, data) {
-						pkt.value = data;
-						cb(err, pkt, i);
-					});
-					break;
+						recvMultiPkt(b, function(err, data) {
+							pkt.value = data;
+							cb(err, pkt, i);
+						});
+						break;
 
-				case pktTypes["label"]:
-					var start = i;
-					while (buf[i++] != 0);
-					var end = i-1;
+					case pktTypes["label"]:
+						var start = i;
+						while (buf[i++] != 0);
+						var end = i-1;
 
-					pkt.value = buf.toString('ascii', start, end);
-					cb(null, pkt, i);
-					break;
+						pkt.value = buf.toString('ascii', start, end);
+						cb(null, pkt, i);
+						break;
 
-				default: cb("Unknown pkt type " + pktType + " at index " + i, pkt); continue;
+					case pktTypes["system time"]:
+						pkt.value = buf.readUInt32LE(i);
+						i += 4;
+						cb(null, pkt, i);
+						break;
+
+					default: cb("Unknown pkt type " + pktType + " at index " + i, pkt); continue;
+				}
+
 			}
-
 		}
+	} catch(err) {
+		// Most likely read out of bound on the buffer, meaing that the end of
+		// input is malformed.
+		cb(err, null, i);
 	}
 };
 
