@@ -67,7 +67,7 @@ var pktTypes = {
 	"request num log": REQUEST_OFFSET + 2,
 	"label": REQUEST_OFFSET + 3,
 
-	"system time": 100, //51,
+	"system time": 51,
 };
 // Create the inverse
 _.forEach(pktTypes, function(n, key) {
