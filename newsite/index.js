@@ -79,7 +79,7 @@ serialport.on('error', function(error){
 	console.log(error);
 });
 
-var debug = true;
+var debug = false;
 //Debug functions
 if(debug) {
 	setInterval(function() {
