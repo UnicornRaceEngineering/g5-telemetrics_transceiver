@@ -6,9 +6,14 @@ function escapeNonWords(s) {
 
 var socket = io();
 var plots = {}; // Map of sensor -> chart
-var x = 0;
-var y = 0;
-var offset = 5;
+
+//Variables used for the canvas.
+var x_pos = 0;
+var y_pos = 0;
+var blocksize = 20;
+var ball_size = 10
+var offset = 5; //Moves the ball object into center
+//TODO: Find a dynamic offset value, maybe derive from c.height & c.width
 var c, ctx, blocksize, ball;
 
 
@@ -16,13 +21,15 @@ socket.on('data', function(pkt){
     if ((~pkt.name.indexOf("GX") || ~pkt.name.indexOf("GY")) && "GX" in plots) {
         // Update the plot
         if (~pkt.name.indexOf("GX")) {
-            x = pkt.value;
+            x_pos += pkt.value;
         } else {
-            y = pkt.value;
-            ctx.clearRect(0,0,c.width,c.height);      //Clear the canvas
-            ctx.stroke();                             //Put it onto the canvas
-            ctx.putImageData(ball, c.width/2 + x*blocksize - 5, c.height/2 + y*blocksize - 5);
-        }        
+        //GY-event is usually sent directly after GX-event
+        //so we do not update at both events
+            y_pos += pkt.value;
+            ctx.clearRect(0,0,c.width,c.height);                                                //Clear the canvas
+            ctx.stroke();                                                                       //Apply grid colors again
+            ctx.putImageData(ball, c.width/2 + x_pos*blocksize - offset, c.height/2 + y_pos*blocksize - offset);  //Place ball object
+        }
     } else if (pkt.name in plots) {
         // Update the plot
         var shift = plots[pkt.name].series[0].data.length > 50;
@@ -36,9 +43,8 @@ socket.on('data', function(pkt){
             c = document.getElementById("GX");
             ctx = c.getContext("2d");
             ctx.strokeStyle = "lightgrey";
-            blocksize = 40;
-            plots["GX"] = ctx;
-            
+            plots["GX"] = ctx; //Store canvas context in plots so it can be used out of scope.
+
             //Make the grid
             for (var i = 0; i < c.width/2; i+=blocksize) {
                 ctx.moveTo(c.width/2 + i, 0)
@@ -58,13 +64,26 @@ socket.on('data', function(pkt){
             ctx.moveTo(0, c.height/2);
             ctx.lineTo(c.width, c.height/2);
 
-            ball = ctx.createImageData(10,10,20,20);
+            //Making a plot indicator object
+            ball = ctx.createImageData(ball_size, ball_size); //Height = width => square
+
+            //Paint it red
             for (var i = 0; i < ball.data.length; i+=4) {
-                ball.data[i] = 255;
-                ball.data[i+3] = 255;
+                if (is_in_circle(i)) {
+                    ball.data[i] = 255;     //Red 0-255
+                    ball.data[i+1] = 0;     //Blue
+                    ball.data[i+2] = 0;     //Green
+                    ball.data[i+3] = 255;   //Alpha - transparancy
+                } else {
+                    ball.data[i] = 0;       //Red
+                    ball.data[i+1] = 0;     //Blue
+                    ball.data[i+2] = 0;     //Green
+                    ball.data[i+3] = 0;     //Alpha - transparancy
+                }
             };
+
+            //Apply our lines onto ctx.
             ctx.stroke();
-            //TODO: Find a dynamic offset value, maybe derive from c.height & c.width
             ctx.putImageData(ball, c.width/2 - offset, c.height/2 - offset);
         } else {
             //Element is a standard line plot
@@ -114,3 +133,16 @@ socket.on('data', function(pkt){
         $("#plots").disableSelection();
     });
 });
+
+function is_in_circle(x) {
+    x = x/4;                            //Only every 4th is a new pixel
+    var y = Math.floor(x/ball_size);    //New line for every ball_size pixels
+    x = x%ball_size;
+    var dist_center = Math.sqrt(Math.pow(5 - x, 2) + Math.pow(5 - y, 2)); //Euclidian distance to center
+    window.alert(dist_center);
+    if (dist_center >= 2.5) {
+        return false;
+    } else {
+        return true;
+    }
+}
