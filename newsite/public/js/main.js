@@ -11,8 +11,8 @@ var plots = {}; // Map of sensor -> chart
 var x_pos = 0;
 var y_pos = 0;
 var blocksize = 20;
-var ball_size = 10
-var offset = 5; //Moves the ball object into center
+var ball_size = 6;
+var offset = ball_size/2; //Moves the ball object into center
 //TODO: Find a dynamic offset value, maybe derive from c.height & c.width
 var c, ctx, blocksize, ball;
 
@@ -43,9 +43,8 @@ function is_in_circle(x) {
     x = x/4;                            //Only every 4th is a new pixel
     var y = Math.floor(x/ball_size);    //New line for every ball_size pixels
     x = x%ball_size;
-    var dist_center = Math.sqrt(Math.pow(5 - x, 2) + Math.pow(5 - y, 2)); //Euclidian distance to center
-    window.alert(dist_center);
-    if (dist_center >= 2.5) {
+    var dist_center = Math.sqrt(Math.pow(ball_size/2 - x, 2) + Math.pow(ball_size/2 - y, 2)); //Euclidian distance to center
+    if (dist_center >= ball_size/2.5) {
         return false;
     } else {
         return true;
@@ -88,7 +87,7 @@ function create_g_plot() {
 	    ctx.lineTo(c.width, c.height/2 - i)
 	};
 	//Make the x and y axis more pronounced.
-	ctx.moveTo(c.width/2, 0);
+    ctx.moveTo(c.width/2, 0);
 	ctx.lineTo(c.width/2, c.height);
 	ctx.moveTo(0, c.height/2);
 	ctx.lineTo(c.width, c.height/2);
@@ -99,9 +98,9 @@ function create_g_plot() {
 	//Paint it red
 	for (var i = 0; i < ball.data.length; i+=4) {
 	    if (is_in_circle(i)) {
-	        ball.data[i] = 255;     //Red 0-255
-	        ball.data[i+1] = 0;     //Blue
-	        ball.data[i+2] = 0;     //Green
+	        ball.data[i] = 120;     //Red 0-255
+	        ball.data[i+1] = 81;     //Blue
+	        ball.data[i+2] = 169;     //Green
 	        ball.data[i+3] = 255;   //Alpha - transparancy
 	    } else {
 	        ball.data[i] = 0;       //Red
@@ -115,9 +114,14 @@ function create_g_plot() {
 	ctx.putImageData(ball, c.width/2 - offset, c.height/2 - offset);
 }
 
+function toggle_plot(packet) {
+    window.alert("You clicked");
+}
+
 function create_line_plot(packet) {
 	$('#plots').append('<li class="ui-state-default" id="' + escapeNonWords(packet.name) + '"/>');
-   	// $('#rawlist').append('<li><input type="checkbox" class="ui-state-default" id="' + escapeNonWords(packet.name) + '"><label for="' + escapeNonWords(packet.name) + '">' + _.escape(packet.name) + '</label><li>');
+   	//$('#rawlist').append('<li><input type="checkbox" class="ui-state-default" id="' + escapeNonWords(packet.name) + '"><label="' + escapeNonWords(packet.name) + '">' + _.escape(packet.name) + '</label><li>');
+    //$("#rawlist").append('<li class="ui-state-default" id="' + escapeNonWords(packet.name) + '" onclick="toggle_plot(packet)">' + packet.name + ": " + Math.floor(packet.value) + '</li>');
     plots[packet.name] = new Highcharts.Chart({
         chart: {
             renderTo: escapeNonWords(packet.name),
