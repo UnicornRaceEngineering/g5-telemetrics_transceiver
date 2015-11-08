@@ -19,12 +19,12 @@ var Parser = function(lenbufSize) {
 	switch (self.lenbufSize) {
 		case 1:
 			self.readLen = function(buf) {
-				return buf.readUInt8();
+				return buf.readUInt8(0);
 			};
 			break;
 		case 2:
 			self.readLen = function(buf) {
-				return buf.readUInt16LE();
+				return buf.readUInt16LE(0);
 			};
 			break;
 		default: throw new Error("Unuseable length");
