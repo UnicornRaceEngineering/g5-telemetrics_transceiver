@@ -17,13 +17,23 @@ var offset = ball_size/2; //Moves the ball object into center
 var c, ctx, blocksize, ball;
 
 
+setInterval(function() {
+    for (var m in plots) {
+        var plot = plots[m];
+        if (typeof plot.redraw === "undefined") {
+            continue
+        }
+        plot.redraw();
+    }
+}, 500);
+
 socket.on('data', function(pkt){
     if ((~pkt.name.indexOf("GX") || ~pkt.name.indexOf("GY")) && "GX" in plots) {
         update_g_plot(pkt);	//Update the g-force plot
     } else if (pkt.name in plots) {
         // Update the plot
-        var shift = plots[pkt.name].series[0].data.length > 50;
-        plots[pkt.name].series[0].addPoint(pkt.value, true, shift);
+        var shift = plots[pkt.name].series[0].data.length > 400;
+        plots[pkt.name].series[0].addPoint(pkt.value, false, shift);
     } else {
         // Element does not exists, create it
         if (~pkt.name.indexOf("GX") || ~pkt.name.indexOf("GY")){
