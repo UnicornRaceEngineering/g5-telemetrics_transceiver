@@ -6,6 +6,7 @@ function escapeNonWords(s) {
 
 var socket = io();
 var plots = {}; // Map of sensor -> chart
+var rawlist = {};
 
 //Variables used for the canvas.
 var x_pos = 0;
@@ -34,13 +35,25 @@ socket.on('data', function(pkt){
         // Update the plot
         var shift = plots[pkt.name].series[0].data.length > 400;
         plots[pkt.name].series[0].addPoint(pkt.value, false, shift);
+        $('#' + escapeNonWords(name) + '-val').text(pkt.value.toFixed(2));
     } else {
         // Element does not exists, create it
         if (~pkt.name.indexOf("GX") || ~pkt.name.indexOf("GY")){
             create_g_plot();
         } else {
             //Element is a standard line plot
-            create_line_plot(pkt);
+            //create_line_plot(pkt);
+            if ($('#' + escapeNonWords(pkt.name) + '-val').length > 0) {
+                $('#' + escapeNonWords(pkt.name) + '-val').text(pkt.value.toFixed(2));
+            } else {
+                $('#rawlist').append( 
+                    '<tr id="'+ escapeNonWords(pkt.name) + '" class="ui-state-default" onclick="create_line_plot(\'' + pkt.name + '\', ' + pkt.value + ')">' +
+                    '<td>'+pkt.name+'</td>'+
+                    '<td id="' + escapeNonWords(pkt.name) + '-val">'+pkt.value.toFixed(2) +'</td>'+
+                    '</tr>'
+                    );
+                rawlist[pkt.name] = pkt;
+            }
         }
     }
     $(function() {
@@ -98,14 +111,14 @@ function create_g_plot() {
 	};
 	//Make the x and y axis more pronounced.
     ctx.moveTo(c.width/2, 0);
-	ctx.lineTo(c.width/2, c.height);
-	ctx.moveTo(0, c.height/2);
-	ctx.lineTo(c.width, c.height/2);
+    ctx.lineTo(c.width/2, c.height);
+    ctx.moveTo(0, c.height/2);
+    ctx.lineTo(c.width, c.height/2);
 
 	//Making a plot indicator object
 	ball = ctx.createImageData(ball_size, ball_size); //Height = width => square
 
-	//Paint it red
+	//Paint it royal purple
 	for (var i = 0; i < ball.data.length; i+=4) {
 	    if (is_in_circle(i)) {
 	        ball.data[i] = 120;     //Red 0-255
@@ -124,49 +137,52 @@ function create_g_plot() {
 	ctx.putImageData(ball, c.width/2 - offset, c.height/2 - offset);
 }
 
-function toggle_plot(packet) {
-    window.alert("You clicked");
-}
-
-function create_line_plot(packet) {
-	$('#plots').append('<li class="ui-state-default" id="' + escapeNonWords(packet.name) + '"/>');
-   	//$('#rawlist').append('<li><input type="checkbox" class="ui-state-default" id="' + escapeNonWords(packet.name) + '"><label="' + escapeNonWords(packet.name) + '">' + _.escape(packet.name) + '</label><li>');
-    //$("#rawlist").append('<li class="ui-state-default" id="' + escapeNonWords(packet.name) + '" onclick="toggle_plot(packet)">' + packet.name + ": " + Math.floor(packet.value) + '</li>');
-    plots[packet.name] = new Highcharts.Chart({
-        chart: {
-            renderTo: escapeNonWords(packet.name),
-            defaultSeriesType: 'spline',
-            valueDecimals: 2,
-            animation: false,
-        },
-        title: {
-            text: _.escape(packet.name),
-        },
-        xAxis: {
-            labels: {
-                format: '{value:.2f}',
-            },
-        },
-        yAxis: {
-            title: {
-                text: 'Value',
-            },
-            labels: {
-                format: '{value:.2f}'
-            },
-        },
-        plotOptions: {
-            series: {
-                enableMouseTracking: false,
+function create_line_plot(name, value) {
+    //No graph exists, create it
+    if ($('#' + escapeNonWords(name) + '-graph').length == 0) {
+        $('#plots').append('<li class="ui-state-default" id="' + escapeNonWords(name) + '-graph"/>');
+       	//$('#rawlist').append('<li><input type="checkbox" class="ui-state-default" id="' + escapeNonWords(packet.name) + '"><label="' + escapeNonWords(packet.name) + '">' + _.escape(packet.name) + '</label><li>');
+        //$("#rawlist").append('<li class="ui-state-default" id="' + escapeNonWords(packet.name) + '" onclick="toggle_plot(packet)">' + packet.name + ": " + Math.floor(packet.value) + '</li>');
+        plots[name] = new Highcharts.Chart({
+            chart: {
+                renderTo: escapeNonWords(name)+'-graph',
+                defaultSeriesType: 'spline',
+                valueDecimals: 2,
                 animation: false,
-                marker : {
-                    enabled: false
-                }
             },
-        },
-        series: [{
-            name: _.escape(packet.name),
-            data: [packet.value],
-        }],
-    });
+            title: {
+                text: _.escape(name),
+            },
+            xAxis: {
+                labels: {
+                    format: '{value:.2f}',
+                },
+            },
+            yAxis: {
+                title: {
+                    text: 'Value',
+                },
+                labels: {
+                    format: '{value:.2f}'
+                },
+            },
+            plotOptions: {
+                series: {
+                    enableMouseTracking: false,
+                    animation: false,
+                    marker : {
+                        enabled: false
+                    }
+                },
+            },
+            series: [{
+                name: _.escape(name),
+                data: [value],
+            }],
+        });
+    } else {  //ELement already exists, so we delete it
+        plots[name].destroy();
+        $('#'+ escapeNonWords(name) + '-graph').remove();
+        delete plots[name];
+    }
 }
