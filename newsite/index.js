@@ -21,7 +21,7 @@ require("serialport").list(function (err, ports) {
 var ports = {
 	"linux": "/dev/ttyUSB0",
 	"darwin": "/dev/tty.usbserial-A900FLLE",
-	"win32": "COM4",
+	"win32": "COM3",
 };
 var serialport = new SerialPort(ports[os.platform()], {
 	baudrate: 115200,
@@ -79,7 +79,7 @@ serialport.on('error', function(error){
 	console.log(error);
 });
 
-var debug = false;
+var debug = true;
 //Debug functions
 if(debug) {
 	setInterval(function() {
