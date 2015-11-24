@@ -29,6 +29,9 @@ setInterval(function() {
 }, 500);
 
 socket.on('data', function(pkt){
+	if (pkt.name in rawlist) {
+		document.getElementById(escapeNonWords(pkt.name) + '-val').innerHTML = pkt.value.toFixed(2);
+	};
     if ((~pkt.name.indexOf("GX") || ~pkt.name.indexOf("GY")) && "GX" in plots) {
         update_g_plot(pkt);	//Update the g-force plot
     } else if (pkt.name in plots) {
@@ -141,8 +144,6 @@ function create_line_plot(name, value) {
     //No graph exists, create it
     if ($('#' + escapeNonWords(name) + '-graph').length == 0) {
         $('#plots').append('<li class="ui-state-default" id="' + escapeNonWords(name) + '-graph"/>');
-       	//$('#rawlist').append('<li><input type="checkbox" class="ui-state-default" id="' + escapeNonWords(packet.name) + '"><label="' + escapeNonWords(packet.name) + '">' + _.escape(packet.name) + '</label><li>');
-        //$("#rawlist").append('<li class="ui-state-default" id="' + escapeNonWords(packet.name) + '" onclick="toggle_plot(packet)">' + packet.name + ": " + Math.floor(packet.value) + '</li>');
         plots[name] = new Highcharts.Chart({
             chart: {
                 renderTo: escapeNonWords(name)+'-graph',
