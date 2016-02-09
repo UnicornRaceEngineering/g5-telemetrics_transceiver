@@ -187,3 +187,9 @@ function create_line_plot(name, value) {
         delete plots[name];
     }
 }
+
+function download_data(){
+    io.emit('download');
+    window.alert("Test");
+
+}
