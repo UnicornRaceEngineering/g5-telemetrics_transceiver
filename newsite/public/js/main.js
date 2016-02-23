@@ -17,7 +17,6 @@ var offset = ball_size/2; //Moves the ball object into center
 //TODO: Find a dynamic offset value, maybe derive from c.height & c.width
 var c, ctx, blocksize, ball;
 
-
 setInterval(function() {
     for (var m in plots) {
         var plot = plots[m];
@@ -30,6 +29,7 @@ setInterval(function() {
 
 socket.on('data', function(pkt){
     if (~pkt.name.indexOf("request log")) {
+        window.alert("Test");
         var csvString = csvRows.join("\n");
         var a = document.createElement('a');
         a.href = 'data:attachment/csv;base64,' + btoa(csvString);
@@ -39,8 +39,7 @@ socket.on('data', function(pkt){
         document.body.appendChild(a);
 
         a.click();
-    };
-
+    }
     else{
     	if (pkt.name in rawlist) {
     		document.getElementById(escapeNonWords(pkt.name) + '-val').innerHTML = pkt.value.toFixed(2);
@@ -203,7 +202,5 @@ function create_line_plot(name, value) {
 }
 
 function download_data(){
-    io.emit('download');
-    window.alert("Test");
-
+    socket.emit('download');
 }
