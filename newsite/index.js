@@ -93,14 +93,14 @@ if(debug) {
     setInterval(function() {
         io.emit('data', {
             name: 'GX',
-            value: 3 //Math.floor(Math.random() * 3)+2.5
+            value: Math.floor(Math.random() * 3)+2.5
         });
     }, 1000/6);
 
     setInterval(function() {
         io.emit('data', {
             name: 'GY',
-            value: 3 //Math.floor(Math.random() * 3)
+            value: Math.floor(Math.random() * 3)
         });
     }, 1000/6);
 
