@@ -21,6 +21,8 @@ var toCsv = function(dataSet) {
 	return output;
 }
 
+module.exports.toCsv = toCsv
+/*
 fs.readFile(fileName, function(err, data) {
 	if (err) throw err;
 
@@ -38,3 +40,4 @@ fs.readFile(fileName, function(err, data) {
 		}
 	});
 });
+*/

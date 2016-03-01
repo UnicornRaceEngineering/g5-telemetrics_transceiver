@@ -29,16 +29,16 @@ setInterval(function() {
 
 socket.on('data', function(pkt){
     if (~pkt.name.indexOf("request log")) {
-        window.alert("Test");
-        var csvString = csvRows.join("\n");
-        var a = document.createElement('a');
-        a.href = 'data:attachment/csv;base64,' + btoa(csvString);
-        a.target = '_blank';
-        a.download = 'LogData.csv';
+        console.log(pkt);
+        //var csvString = csvRows.join("\n");
+        //var a = document.createElement('a');
+        //a.href = 'data:attachment/csv;base64,' + btoa(csvString);
+        //a.target = '_blank';
+        //a.download = 'LogData.csv';
 
-        document.body.appendChild(a);
+        //document.body.appendChild(a);
 
-        a.click();
+        //a.click();
     }
     else{
     	if (pkt.name in rawlist) {
