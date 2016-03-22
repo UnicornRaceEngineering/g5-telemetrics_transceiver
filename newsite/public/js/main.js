@@ -163,6 +163,7 @@ function create_line_plot(name, value) {
     //No graph exists, create it
     if ($('#' + escapeNonWords(name) + '-graph').length == 0) {
         $('#plots').append('<li class="ui-state-default" id="' + escapeNonWords(name) + '-graph"/>');
+		$('#' + escapeNonWords(name)).css("background-color", "lightblue");
         plots[name] = new Highcharts.Chart({
             chart: {
                 renderTo: escapeNonWords(name)+'-graph',
@@ -203,6 +204,7 @@ function create_line_plot(name, value) {
     } else {  //ELement already exists, so we delete it
         plots[name].destroy();
         $('#'+ escapeNonWords(name) + '-graph').remove();
+		$('#' + escapeNonWords(name)).css("background-color", "lightgrey");
         delete plots[name];
     }
 }
