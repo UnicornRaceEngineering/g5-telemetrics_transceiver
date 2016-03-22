@@ -52,6 +52,18 @@ io.on('connection', function(socket){
     });
 });
 
+var pktList = [];
+var lastSend = Date.now()
+var sendPackage = function(key, pkt) {
+	pktList.push(pkt);
+	var now = Date.now();
+	if (now - lastSend > 100) {
+		io.emit(key, pktList);
+		pktList = [];
+		lastSend = now;
+	}
+}
+
 // We make the http server listen to port 3000
 var PORT = 3000;
 http.listen(PORT, function(){
@@ -71,8 +83,8 @@ serialport.on('open', function(error) {
             console.log(pkt, ",");
             if (pkt.name === "request log") {
                 pkt.value = require("./log2csv").toCsv(pkt.value);
-            } 
-            io.emit('data', pkt);
+            }
+            sendPackage('data', pkt);
         });
     });
 
@@ -87,30 +99,41 @@ var debug = true;
 //Debug functions
 if(debug) {
     setInterval(function() {
-        io.emit('data', {
+        sendPackage('data', {
             name: 'RoadSpeed (km/h)',
             value: (Math.random() - 0.5) * 20
         });
-    }, 1000/6);
+    }, 10);
 
     setInterval(function() {
-        io.emit('data', {
+        sendPackage('data', {
             name: 'GX',
             value: Math.floor(Math.random() * 3)+2.5
         });
-    }, 1000/6);
+    }, 10);
 
     setInterval(function() {
-        io.emit('data', {
+        sendPackage('data', {
             name: 'GY',
             value: Math.floor(Math.random() * 3)
         });
-    }, 1000/6);
+    }, 10);
 
     setInterval(function() {
-        io.emit('data', {
+        sendPackage('data', {
             name: 'GZ',
             value: Math.floor(Math.random() * 3)-2.5
         });
-    }, 1000/6);
+    }, 10);
+
+	// for (var i = 0; i < 50; i++) {
+	// 	(function(i){
+	// 		setInterval(function() {
+	// 			sendPackage('data', {
+	// 				name: 'data-' + i,
+	// 				value: Math.floor(Math.random() * i)-2.5
+	// 			});
+	// 		}, 10);
+	// 	})(i)
+	// }
 }

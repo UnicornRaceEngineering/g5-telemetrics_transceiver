@@ -1,7 +1,8 @@
 'use strict';
 
+var escapeNonWordsRegexp = /[_\W]+/g // precompile regex
 function escapeNonWords(s) {
-    return s.replace(/[_\W]+/g, "-");
+    return s.replace(escapeNonWordsRegexp, "-");
 }
 
 var socket = io();
@@ -27,55 +28,60 @@ setInterval(function() {
     }
 }, 500);
 
-socket.on('data', function(pkt){
-    if (~pkt.name.indexOf("request log")) {
-        console.log(pkt);
-        //var csvString = csvRows.join("\n");
-        //var a = document.createElement('a');
-        //a.href = 'data:attachment/csv;base64,' + btoa(csvString);
-        //a.target = '_blank';
-        //a.download = 'LogData.csv';
+socket.on('data', function(pkts){
+	for (var i = 0; i < pkts.length; i++) {
+		var pkt = pkts[i];
 
-        //document.body.appendChild(a);
+		if (~pkt.name.indexOf("request log")) {
+			console.log(pkt);
+			//var csvString = csvRows.join("\n");
+			//var a = document.createElement('a');
+			//a.href = 'data:attachment/csv;base64,' + btoa(csvString);
+			//a.target = '_blank';
+			//a.download = 'LogData.csv';
 
-        //a.click();
-    }
-    else{
-    	if (pkt.name in rawlist) {
-    		document.getElementById(escapeNonWords(pkt.name) + '-val').innerHTML = pkt.value.toFixed(2);
-    	};
-        if ((~pkt.name.indexOf("GX") || ~pkt.name.indexOf("GY")) && "GX" in plots) {
-            update_g_plot(pkt);	//Update the g-force plot
-        } else if (pkt.name in plots) {
-            // Update the plot
-            var shift = plots[pkt.name].series[0].data.length > 400;
-            plots[pkt.name].series[0].addPoint(pkt.value, false, shift);
-            $('#' + escapeNonWords(name) + '-val').text(pkt.value.toFixed(2));
-        } else {
-            // Element does not exists, create it
-            if (~pkt.name.indexOf("GX") || ~pkt.name.indexOf("GY")){
-                create_g_plot();
-            } else {
-                //Element is a standard line plot
-                //create_line_plot(pkt);
-                if ($('#' + escapeNonWords(pkt.name) + '-val').length > 0) {
-                    $('#' + escapeNonWords(pkt.name) + '-val').text(pkt.value.toFixed(2));
-                } else {
-                    $('#rawlist').append( 
-                        '<tr id="'+ escapeNonWords(pkt.name) + '" class="ui-state-default" onclick="create_line_plot(\'' + pkt.name + '\', ' + pkt.value + ')">' +
-                        '<td>'+pkt.name+'</td>'+
-                        '<td id="' + escapeNonWords(pkt.name) + '-val">'+pkt.value.toFixed(2) +'</td>'+
-                        '</tr>'
-                        );
-                    rawlist[pkt.name] = pkt;
-                }
-            }
-        }
-    }
-    $(function() {
-        $("#plots").sortable();
-        $("#plots").disableSelection();
-    });
+			//document.body.appendChild(a);
+
+			//a.click();
+		}
+		else{
+			var escapedName = escapeNonWords(pkt.name);
+			if (pkt.name in rawlist) {
+				document.getElementById(escapedName + '-val').innerHTML = pkt.value.toFixed(2);
+			};
+			if ((~pkt.name.indexOf("GX") || ~pkt.name.indexOf("GY")) && "GX" in plots) {
+				update_g_plot(pkt);	//Update the g-force plot
+			} else if (pkt.name in plots) {
+				// Update the plot
+				var shift = plots[pkt.name].series[0].data.length > 400;
+				plots[pkt.name].series[0].addPoint(pkt.value, false, shift);
+			} else {
+				// Element does not exists, create it
+				if (~pkt.name.indexOf("GX") || ~pkt.name.indexOf("GY")){
+					create_g_plot();
+				} else {
+					//Element is a standard line plot
+					//create_line_plot(pkt);
+					var nameVal = escapedName + '-val';
+					if ($('#' + nameVal).length > 0) {
+						$('#' + nameVal).text(pkt.value.toFixed(2));
+					} else {
+						$('#rawlist').append(
+							'<tr id="'+ escapedName + '" class="ui-state-default" onclick="create_line_plot(\'' + pkt.name + '\', ' + pkt.value + ')">' +
+							'<td>'+pkt.name+'</td>'+
+							'<td id="' + nameVal + '">'+pkt.value.toFixed(2) +'</td>'+
+							'</tr>'
+						);
+						rawlist[pkt.name] = pkt;
+					}
+				}
+			}
+		}
+		$(function() {
+			$("#plots").sortable();
+			$("#plots").disableSelection();
+		});
+	}
 });
 
 function is_in_circle(x) {
