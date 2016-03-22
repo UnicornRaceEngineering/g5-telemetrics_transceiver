@@ -45,7 +45,7 @@ io.on('connection', function(socket){
     });
 
     socket.on('download', function() {
-        var buf = new Buffer(3); // 3: uint8 - uint16 - 
+        var buf = new Buffer(3); // 3: uint8 - uint16 -
         buf.writeUInt8(0x01, 0);        //Write 1 offset by 0
         buf.writeUInt16LE(0x0001, 1);   //Write 0 and 3 offset by 1
         serialport.write(buf);
