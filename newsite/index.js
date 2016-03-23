@@ -53,14 +53,22 @@ io.on('connection', function(socket){
 });
 
 var pktList = [];
-var lastSend = Date.now()
+var lastSend = Date.now();
+var timeout = null;
 var sendPackage = function(key, pkt) {
+	if (timeout !== null) clearTimeout(timeout);
 	pktList.push(pkt);
+	var timeoutTime = 100;
 	var now = Date.now();
-	if (now - lastSend > 100) {
+	var flush = function() {
 		io.emit(key, pktList);
 		pktList = [];
 		lastSend = now;
+	}
+	if (now - lastSend > timeoutTime) {
+		flush();
+	} else {
+		timeout = setTimeout(flush, timeoutTime);
 	}
 }
 
