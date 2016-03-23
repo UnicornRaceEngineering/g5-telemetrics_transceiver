@@ -137,6 +137,39 @@ if(debug) {
         });
     }, 10);
 
+	(function(){
+		var dt = 0.0;
+		setInterval(function() {
+			dt += 0.1;
+			sendPackage('data', {
+				name: 'sine wave',
+				value: Math.sin(dt)
+			});
+		}, 25);
+	})();
+
+	(function(){
+		var dt = 0.0;
+		setInterval(function() {
+			dt += 0.1;
+			sendPackage('data', {
+				name: 'Spike noisy sin',
+				value: Math.tan(dt) + Math.sin(dt)
+			});
+		}, 10);
+	})();
+
+	(function(){
+		var dt = 0.0;
+		setInterval(function() {
+			dt += 0.1;
+			sendPackage('data', {
+				name: 'noisy sine',
+				value: Math.sin(dt) * Math.random()
+			});
+		}, 10);
+	})();
+
 	// for (var i = 0; i < 50; i++) {
 	// 	(function(i){
 	// 		setInterval(function() {
