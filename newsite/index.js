@@ -52,25 +52,28 @@ io.on('connection', function(socket){
     });
 });
 
-var pktList = [];
-var lastSend = Date.now();
-var timeout = null;
-var sendPackage = function(key, pkt) {
-	if (timeout !== null) clearTimeout(timeout);
-	pktList.push(pkt);
-	var timeoutTime = 100;
-	var now = Date.now();
-	var flush = function() {
-		io.emit(key, pktList);
-		pktList = [];
-		lastSend = now;
-	}
-	if (now - lastSend > timeoutTime) {
-		flush();
-	} else {
-		timeout = setTimeout(flush, timeoutTime);
-	}
-}
+var sendPackage = (function(){
+	var pktList = [];
+	var lastSend = Date.now();
+	var timeout = null;
+	return function(key, pkt) {
+		if (timeout !== null) clearTimeout(timeout);
+		pktList.push(pkt);
+		var timeoutTime = 100;
+		var now = Date.now();
+		var flush = function() {
+			io.emit(key, pktList);
+			pktList = [];
+			lastSend = now;
+		}
+		if (now - lastSend > timeoutTime) {
+			flush();
+		} else {
+			timeout = setTimeout(flush, timeoutTime);
+		}
+	};
+})();
+
 
 // We make the http server listen to port 3000
 var PORT = 3000;
