@@ -56,12 +56,14 @@ socket.on('data', function(pkts){
 				updateSidebarValue(nameVal, pkt);
 			};
 
-			if ((pkt.name === "GX" || pkt.name === "GY") && "GX" in plots) {
-				update_g_plot(pkt);	//Update the g-force plot
-			} else if (pkt.name in plots) {
+			if (pkt.name in plots) {
 				// Update the plot
-				var shift = plots[pkt.name].series[0].data.length > 400;
-				plots[pkt.name].series[0].addPoint(pkt.value, false, shift);
+				if (pkt.name === "GX" || pkt.name === "GY") {
+					update_g_plot(pkt);
+				} else {
+					var shift = plots[pkt.name].series[0].data.length > 400;
+					plots[pkt.name].series[0].addPoint(pkt.value, false, shift);
+				}
 			} else {
 				// Element does not exists, create it
 				var showPlotFunc = onclick = 'create_line_plot';
@@ -114,53 +116,63 @@ function update_g_plot(packet){
 }
 
 function create_g_plot() {
-	//Element is a G-force graph - only make on GX event.
-	//GX, GY is a html5 canvas element
-	$('#plots').append('<canvas class="ui-state-default" id="G-plot"/>');
-	c = document.getElementById("G-plot");
-	ctx = c.getContext("2d");
-	ctx.strokeStyle = "lightgrey";
-	plots["GX"] = ctx; //Store canvas context in plots so it can be used out of scope.
+	if ($('#G-plot').length === 0) {
+		//Element is a G-force graph - only make on GX event.
+		//GX, GY is a html5 canvas element
+		$('#plots').append('<canvas class="ui-state-default" id="G-plot"/>');
+		c = document.getElementById("G-plot");
+		ctx = c.getContext("2d");
+		ctx.strokeStyle = "lightgrey";
+		plots["GX"] = plots["GY"] = ctx; //Store canvas context in plots so it can be used out of scope.
 
-	//Make the grid
-	for (var i = 0; i < c.width/2; i+=blocksize) {
-	    ctx.moveTo(c.width/2 + i, 0)
-	    ctx.lineTo(c.width/2 + i, c.height)
-	    ctx.moveTo(c.width/2 - i, 0)
-	    ctx.lineTo(c.width/2 - i, c.height)
-	};
-	for (var i = 0; i < c.height/2; i+=blocksize) {
-	    ctx.moveTo(0, c.height/2 + i)
-	    ctx.lineTo(c.width, c.height/2 + i)
-	    ctx.moveTo(0, c.height/2 - i)
-	    ctx.lineTo(c.width, c.height/2 - i)
-	};
-	//Make the x and y axis more pronounced.
-    ctx.moveTo(c.width/2, 0);
-    ctx.lineTo(c.width/2, c.height);
-    ctx.moveTo(0, c.height/2);
-    ctx.lineTo(c.width, c.height/2);
+		//Make the grid
+		for (var i = 0; i < c.width/2; i+=blocksize) {
+			ctx.moveTo(c.width/2 + i, 0)
+			ctx.lineTo(c.width/2 + i, c.height)
+			ctx.moveTo(c.width/2 - i, 0)
+			ctx.lineTo(c.width/2 - i, c.height)
+		};
+		for (var i = 0; i < c.height/2; i+=blocksize) {
+			ctx.moveTo(0, c.height/2 + i)
+			ctx.lineTo(c.width, c.height/2 + i)
+			ctx.moveTo(0, c.height/2 - i)
+			ctx.lineTo(c.width, c.height/2 - i)
+		};
+		//Make the x and y axis more pronounced.
+		ctx.moveTo(c.width/2, 0);
+		ctx.lineTo(c.width/2, c.height);
+		ctx.moveTo(0, c.height/2);
+		ctx.lineTo(c.width, c.height/2);
 
-	//Making a plot indicator object
-	ball = ctx.createImageData(ball_size, ball_size); //Height = width => square
+		//Making a plot indicator object
+		ball = ctx.createImageData(ball_size, ball_size); //Height = width => square
 
-	//Paint it royal purple
-	for (var i = 0; i < ball.data.length; i+=4) {
-	    if (is_in_circle(i)) {
-	        ball.data[i] = 120;     //Red 0-255
-	        ball.data[i+1] = 81;     //Blue
-	        ball.data[i+2] = 169;     //Green
-	        ball.data[i+3] = 255;   //Alpha - transparancy
-	    } else {
-	        ball.data[i] = 0;       //Red
-	        ball.data[i+1] = 0;     //Blue
-	        ball.data[i+2] = 0;     //Green
-	        ball.data[i+3] = 0;     //Alpha - transparancy
-	    }
-	};
-	//Apply our lines onto ctx.
-	ctx.stroke();
-	ctx.putImageData(ball, c.width/2 - offset, c.height/2 - offset);
+		//Paint it royal purple
+		for (var i = 0; i < ball.data.length; i+=4) {
+			if (is_in_circle(i)) {
+				ball.data[i] = 120;     //Red 0-255
+				ball.data[i+1] = 81;     //Blue
+				ball.data[i+2] = 169;     //Green
+				ball.data[i+3] = 255;   //Alpha - transparancy
+			} else {
+				ball.data[i] = 0;       //Red
+				ball.data[i+1] = 0;     //Blue
+				ball.data[i+2] = 0;     //Green
+				ball.data[i+3] = 0;     //Alpha - transparancy
+			}
+		};
+		//Apply our lines onto ctx.
+		ctx.stroke();
+		ctx.putImageData(ball, c.width/2 - offset, c.height/2 - offset);
+
+		$('#GX').css("background-color", "lightblue");
+		$('#GY').css("background-color", "lightblue");
+	} else {
+		$('#G-plot').remove();
+		$('#GX').css("background-color", "lightgrey");
+		$('#GY').css("background-color", "lightgrey");
+	}
+
 }
 
 function create_line_plot(name, value) {
