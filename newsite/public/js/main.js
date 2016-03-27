@@ -56,7 +56,7 @@ socket.on('data', function(pkts){
 				updateSidebarValue(nameVal, pkt);
 			};
 
-			if ((~pkt.name.indexOf("GX") || ~pkt.name.indexOf("GY")) && "GX" in plots) {
+			if ((pkt.name === "GX" || pkt.name === "GY") && "GX" in plots) {
 				update_g_plot(pkt);	//Update the g-force plot
 			} else if (pkt.name in plots) {
 				// Update the plot
@@ -64,19 +64,20 @@ socket.on('data', function(pkts){
 				plots[pkt.name].series[0].addPoint(pkt.value, false, shift);
 			} else {
 				// Element does not exists, create it
-				if (~pkt.name.indexOf("GX") || ~pkt.name.indexOf("GY")){
-					create_g_plot();
-				} else {
-					//Element is a standard line plot
-					if ($('#' + nameVal).length === 0) {
-						$('#rawlist').append(
-							'<tr id="'+ escapedName + '" class="ui-state-default" onclick="create_line_plot(\'' + pkt.name + '\', ' + pkt.value + ')">' +
-							'<td>'+pkt.name+'</td>'+
-							'<td id="' + nameVal + '">'+pkt.value.toFixed(2) +'</td>'+
-							'</tr>'
-						);
-						rawlist[pkt.name] = pkt;
-					}
+				var showPlotFunc = onclick = 'create_line_plot';
+				if (pkt.name === "GX" || pkt.name === "GY") {
+					showPlotFunc = 'create_g_plot';
+				}
+
+				//Element is a standard line plot
+				if ($('#' + nameVal).length === 0) {
+					$('#rawlist').append(
+						'<tr id="'+ escapedName + '" class="ui-state-default" onclick="'+showPlotFunc+'(\'' + pkt.name + '\', ' + pkt.value + ')">' +
+						'<td>'+pkt.name+'</td>'+
+						'<td id="' + nameVal + '">'+pkt.value.toFixed(2) +'</td>'+
+						'</tr>'
+					);
+					rawlist[pkt.name] = pkt;
 				}
 			}
 		}
@@ -115,8 +116,8 @@ function update_g_plot(packet){
 function create_g_plot() {
 	//Element is a G-force graph - only make on GX event.
 	//GX, GY is a html5 canvas element
-	$('#plots').append('<canvas class="ui-state-default" id="GX"/>');
-	c = document.getElementById("GX");
+	$('#plots').append('<canvas class="ui-state-default" id="G-plot"/>');
+	c = document.getElementById("G-plot");
 	ctx = c.getContext("2d");
 	ctx.strokeStyle = "lightgrey";
 	plots["GX"] = ctx; //Store canvas context in plots so it can be used out of scope.
