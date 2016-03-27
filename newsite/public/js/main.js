@@ -28,6 +28,10 @@ setInterval(function() {
     }
 }, 500);
 
+var updateSidebarValue = _.throttle(function(nameVal, pkt) {
+	document.getElementById(nameVal).innerHTML = pkt.value.toFixed(2);
+}, 1);
+
 socket.on('data', function(pkts){
 	for (var i = 0; i < pkts.length; i++) {
 		var pkt = pkts[i];
@@ -49,7 +53,7 @@ socket.on('data', function(pkts){
 			var nameVal = escapedName + '-val';
 			if (pkt.name in rawlist) {
 				// In all case we need to update the sidebar raw value
-				document.getElementById(nameVal).innerHTML = pkt.value.toFixed(2);
+				updateSidebarValue(nameVal, pkt);
 			};
 
 			if ((~pkt.name.indexOf("GX") || ~pkt.name.indexOf("GY")) && "GX" in plots) {
