@@ -44,10 +44,10 @@ io.on('connection', function(socket){
         console.log("Total: " + clientsConnected);
     });
 
-    socket.on('download', function() {
+    socket.on('download', function(logNumber) {
         var buf = new Buffer(3); // 3: uint8 - uint16 -
-        buf.writeUInt8(0x01, 0);        //Write 1 offset by 0
-        buf.writeUInt16LE(0x0001, 1);   //Write 0 and 3 offset by 1
+        buf.writeUInt8(0x01, 0); // 1 is request log
+        buf.writeUInt16LE(logNumber, 1);
         serialport.write(buf);
     });
 });
@@ -90,7 +90,10 @@ serialport.on('open', function(error) {
     // Event for received data
     serialport.on('data', function(data){
         schema.unpack(data, function(err, pkt) {
-            if (err) throw err;
+            if (err) {
+                console.warn(err);
+                return
+            }
             console.log(pkt, ",");
             if (pkt.name === "request log") {
                 pkt.value = require("./log2csv").toCsv(pkt.value);

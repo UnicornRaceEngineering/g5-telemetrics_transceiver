@@ -36,17 +36,13 @@ socket.on('data', function(pkts){
 	for (var i = 0; i < pkts.length; i++) {
 		var pkt = pkts[i];
 
-		if (~pkt.name.indexOf("request log")) {
-			console.log(pkt);
-			//var csvString = csvRows.join("\n");
-			//var a = document.createElement('a');
-			//a.href = 'data:attachment/csv;base64,' + btoa(csvString);
-			//a.target = '_blank';
-			//a.download = 'LogData.csv';
-
-			//document.body.appendChild(a);
-
-			//a.click();
+		if (pkt.name === "request log") {
+			var csvString = pkt.value;
+			var a = document.createElement('a');
+			a.href = 'data:attachment/csv;base64,' + btoa(csvString);
+			a.target = '_blank';
+			a.download = 'LogData.csv';
+			a.click();
 		}
 		else{
 			var escapedName = escapeNonWords(pkt.name);
@@ -226,5 +222,6 @@ function create_line_plot(name, value) {
 }
 
 function download_data(){
-    socket.emit('download');
+    var logNumber = document.getElementById('log-number').value
+    socket.emit('download', logNumber);
 }
