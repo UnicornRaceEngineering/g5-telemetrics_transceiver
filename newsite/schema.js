@@ -91,7 +91,7 @@ console.log(chunk)
 		var err = null;
 		for (var i = 0; i < multiPackage.length; i++) {
 			if (multiPackage[i].n != i+1) {
-				err = "Multi package missed,", multiPackage[i].n, "!=", i+1;
+				err = "Multi package missed," + multiPackage[i].n + "!=" + i+1;
 				break;
 			}
 		}
