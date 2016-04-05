@@ -45,12 +45,35 @@ io.on('connection', function(socket){
     });
 
     socket.on('download', function() {
-        var buf = new Buffer(3); // 3: uint8 - uint16 - 
+        var buf = new Buffer(3); // 3: uint8 - uint16 -
         buf.writeUInt8(0x01, 0);        //Write 1 offset by 0
         buf.writeUInt16LE(0x0001, 1);   //Write 0 and 3 offset by 1
         serialport.write(buf);
     });
 });
+
+var sendPackage = (function(){
+	var pktList = [];
+	var lastSend = Date.now();
+	var timeout = null;
+	return function(key, pkt) {
+		if (timeout !== null) clearTimeout(timeout);
+		pktList.push(pkt);
+		var timeoutTime = 100;
+		var now = Date.now();
+		var flush = function() {
+			io.emit(key, pktList);
+			pktList = [];
+			lastSend = now;
+		}
+		if (now - lastSend > timeoutTime) {
+			flush();
+		} else {
+			timeout = setTimeout(flush, timeoutTime);
+		}
+	};
+})();
+
 
 // We make the http server listen to port 3000
 var PORT = 3000;
@@ -71,8 +94,8 @@ serialport.on('open', function(error) {
             console.log(pkt, ",");
             if (pkt.name === "request log") {
                 pkt.value = require("./log2csv").toCsv(pkt.value);
-            } 
-            io.emit('data', pkt);
+            }
+            sendPackage('data', pkt);
         });
     });
 
@@ -87,30 +110,74 @@ var debug = true;
 //Debug functions
 if(debug) {
     setInterval(function() {
-        io.emit('data', {
+        sendPackage('data', {
             name: 'RoadSpeed (km/h)',
             value: (Math.random() - 0.5) * 20
         });
-    }, 1000/6);
+    }, 10);
 
     setInterval(function() {
-        io.emit('data', {
+        sendPackage('data', {
             name: 'GX',
             value: Math.floor(Math.random() * 3)+2.5
         });
-    }, 1000/6);
+    }, 10);
 
     setInterval(function() {
-        io.emit('data', {
+        sendPackage('data', {
             name: 'GY',
             value: Math.floor(Math.random() * 3)
         });
-    }, 1000/6);
+    }, 10);
 
     setInterval(function() {
-        io.emit('data', {
+        sendPackage('data', {
             name: 'GZ',
             value: Math.floor(Math.random() * 3)-2.5
         });
-    }, 1000/6);
+    }, 10);
+
+	(function(){
+		var dt = 0.0;
+		setInterval(function() {
+			dt += 0.1;
+			sendPackage('data', {
+				name: 'sine wave',
+				value: Math.sin(dt)
+			});
+		}, 25);
+	})();
+
+	(function(){
+		var dt = 0.0;
+		setInterval(function() {
+			dt += 0.1;
+			sendPackage('data', {
+				name: 'Spike noisy sin',
+				value: Math.tan(dt) + Math.sin(dt)
+			});
+		}, 10);
+	})();
+
+	(function(){
+		var dt = 0.0;
+		setInterval(function() {
+			dt += 0.1;
+			sendPackage('data', {
+				name: 'noisy sine',
+				value: Math.sin(dt) * Math.random()
+			});
+		}, 10);
+	})();
+
+	// for (var i = 0; i < 50; i++) {
+	// 	(function(i){
+	// 		setInterval(function() {
+	// 			sendPackage('data', {
+	// 				name: 'data-' + i,
+	// 				value: Math.floor(Math.random() * i)-2.5
+	// 			});
+	// 		}, 10);
+	// 	})(i)
+	// }
 }
