@@ -48,7 +48,7 @@ socket.on('data', function(pkt){
             update_g_plot(pkt);	//Update the g-force plot
         } else if (pkt.name in plots) {
             // Update the plot
-            var shift = plots[pkt.name].series[0].data.length > 400;
+            var shift = plots[pkt.name].series[0].data.length > 100;
             plots[pkt.name].series[0].addPoint(pkt.value, false, shift);
             $('#' + escapeNonWords(name) + '-val').text(pkt.value.toFixed(2));
         } else {
@@ -64,6 +64,7 @@ socket.on('data', function(pkt){
                     $('#rawlist').append( 
                         '<tr id="'+ escapeNonWords(pkt.name) + '" class="ui-state-default" onclick="create_line_plot(\'' + pkt.name + '\', ' + pkt.value + ')">' +
                         '<td>'+pkt.name+'</td>'+
+                        '<td><input id="'+ escapeNonWords(pkt.name) +'-watch" type="number" size="1" onchange="add_plotline(\'' + pkt.name + '\')" ></td>' +
                         '<td id="' + escapeNonWords(pkt.name) + '-val">'+pkt.value.toFixed(2) +'</td>'+
                         '</tr>'
                         );
@@ -196,11 +197,24 @@ function create_line_plot(name, value) {
         });
     } else {  //ELement already exists, so we delete it
         plots[name].destroy();
-        $('#'+ escapeNonWords(name) + '-graph').remove();
+        $('#' + escapeNonWords(name) + '-graph').remove();
         delete plots[name];
     }
 }
 
 function download_data(){
     socket.emit('download');
+}
+
+function add_plotline(name){
+    if ($('#' + escapeNonWords(name) + '-graph').length == 0) {
+            $('#' + escapeNonWords(name) + '-graph').yAxis[0].addPlotline({
+            plotLines: [{
+                id: name +'-plotline',
+                color: 'red',
+                width: 1,
+                value: $('#' + name + '-watch').value
+            }]
+        });
+    }
 }
