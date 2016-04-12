@@ -37,6 +37,8 @@ io.on('connection', function(socket){
     clientsConnected++; // increment amount of clients
     console.log('a client connected');
     console.log("Total: " + clientsConnected);
+    //Throw them session storage
+    io.emit('storage', storage);
     // Hook up for disconnect event
     socket.on('disconnect', function(){
         clientsConnected--; // decrement amount of clients
@@ -52,6 +54,8 @@ io.on('connection', function(socket){
     });
 });
 
+var storage = [];
+
 var sendPackage = (function(){
 	var pktList = [];
 	var lastSend = Date.now();
@@ -59,8 +63,8 @@ var sendPackage = (function(){
 	return function(key, pkt) {
 		if (timeout !== null) clearTimeout(timeout);
 		pktList.push(pkt);
-		var timeoutTime = 100;
-		var now = Date.now();
+        var timeoutTime = 100;
+        var now = Date.now();
 		var flush = function() {
 			io.emit(key, pktList);
 			pktList = [];
@@ -95,6 +99,9 @@ serialport.on('open', function(error) {
             if (pkt.name === "request log") {
                 pkt.value = require("./log2csv").toCsv(pkt.value);
             }
+            //Store the package locally
+            storage.push(pkt);
+            //Push the data live
             sendPackage('data', pkt);
         });
     });
