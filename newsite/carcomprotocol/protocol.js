@@ -126,7 +126,7 @@ var createPkt = function(type, payload, reserved) {
 
 var protocol = function(emitter) {
 	var self = this;
-	self.emitter = emitter;
+	self.emitter = emitter || new EventEmitter();
 	self.event = new EventEmitter(); // for internal events
 
 	self.createHandshake = function() {
@@ -148,7 +148,7 @@ var protocol = function(emitter) {
 			console.log("write", pkt)
 
 			var timeout = setTimeout(function() {
-				console.log("re-sending due to timeout");
+				console.log("TIMEOUT");
 				self.event.removeListener('ack/nack', ackCB);
 				cb(TIME_OUT_ERR, null);
 			}, ACK_TIMEOUT);
@@ -164,7 +164,7 @@ var protocol = function(emitter) {
 				}
 			};
 
-		self.event.once('ack/nack', ackCB);
+			self.event.once('ack/nack', ackCB);
 		});
 	};
 
@@ -176,6 +176,55 @@ var protocol = function(emitter) {
 			} else {
 				cb(err)
 			}
+		});
+	};
+
+	self.sendACK = function(ackOrNack, cb) {
+		var pkt = createPkt(PACKAGE_TYPE_ENUM["ack/nack"], null, new Buffer([ackOrNack]));
+		console.log("writeACK", pkt);
+		self.sp.write(pkt, cb);
+	};
+
+	self.makeRequest = function(req, cb) {
+		var payload = new Buffer(1);
+		payload.writeUInt8(req, 0);
+
+		var pkt = createPkt(PACKAGE_TYPE_ENUM["request/response"], payload);
+
+		var chunks = [];
+
+		self.send(pkt, function(err) {
+			if (err) throw err;
+
+			var recvChunk = function(chunk) {
+				chunks.push(chunk);
+
+				self.sendACK(true, function(err) {
+					if (err) throw err;
+				});
+
+				// Empty chunk signals end
+				if (chunk.length === 0) {
+					self.event.removeListener("req/res", recvChunk);
+
+					// concat all chunks into a new buffer
+					var buf = new Buffer(_.reduce(chunks, function(sum, n) {
+						return sum + n.length;
+					} ,0));
+
+					var i = 0;
+					_.forEach(chunks, function(chunk) {
+						chunk.copy(buf, i);
+						i += chunk.length;
+					});
+
+					assert(i === buf.length);
+
+					cb(null, buf);
+				}
+			};
+
+			self.event.on("req/res", recvChunk);
 		});
 	}
 
@@ -194,14 +243,17 @@ console.log("raw input:", buf);
 	});
 	self.sp.on('error', function(err) {
 		console.warn(err);
+		self.sendACK(false, function(err) {
+			if (err) throw err;
+		});
 	});
 
 
 	self.sp.on('open', function(err) {
 		if (err) console.warn(err);
 
-		self.sp.on('request/response', function() {
-			console.log("req/res");
+		self.sp.on('request/response', function(payload) {
+			self.event.emit("req/res", payload);
 		});
 
 		self.sp.on('handshake', function() {
@@ -235,10 +287,22 @@ console.log(ackStatus, payload);
 			if (err) {
 				throw err;
 			}
-			console.log("Handshake done sending");
+			self.emitter.emit('open', err);
 		});
 	});
 
 };
 
-var p = new protocol();
+// TEST EXAMPLE
+var proto = new EventEmitter();
+var p = new protocol(proto);
+
+proto.on('open', function(err) {
+	if (err) throw err;
+
+	p.makeRequest(0x00, function(err, response) {
+		if (err) throw err;
+		console.log("done making request");
+		console.log(response);
+	})
+});
