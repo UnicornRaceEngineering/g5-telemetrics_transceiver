@@ -73,6 +73,8 @@ var parser = function() {
 			var calcChk = chksum(self.payload);
 			if (recvChk !== calcChk) {
 				var err = new Error("Invalid checksum. Got " + recvChk + " Expected " + calcChk);
+				err.got = recvChk;
+				err.expected = calcChk;
 				emitter.emit("error", err);
 			} else {
 				var pktDescription = PACKAGE_TYPE_ENUM[self.pktType];
@@ -242,10 +244,13 @@ console.log("raw input:", buf);
 		})(),
 	});
 	self.sp.on('error', function(err) {
-		console.warn(err);
-		self.sendACK(false, function(err) {
-			if (err) throw err;
-		});
+		if (err.message.startsWith("Invalid checksum.")) {
+			self.sendACK(false, function(err) {
+				if (err) throw err;
+			});
+		} else {
+			console.warn(err);
+		}
 	});
 
 
