@@ -7,6 +7,8 @@ var SerialPort = require('serialport').SerialPort;
 var schema = require("../schema");
 var log2csv = require("../log2csv");
 
+var TIME_OUT_ERR = new Error("Send timed out");
+
 var ACK_TIMEOUT = 100;
 
 var START_BYTE = 0xA1;
@@ -121,9 +123,6 @@ var protocol = function(emitter) {
 	var self = this;
 	self.emitter = emitter;
 	self.event = new EventEmitter(); // for internal events
-	// self.events = {
-	// 	handshake: new EventEmitter(),
-	// }
 
 	self.createHandshake = function() {
 		var ts = Math.round((new Date()).getTime() / 1000);
@@ -138,44 +137,40 @@ var protocol = function(emitter) {
 
 	self.send = function(pkt, cb) {
 		if (!(pkt instanceof Buffer)) throw new TypeError("pkt is not a buffer");
-
-		var retries = 0;
-
-		// var timeout = setTimeout(function() {
-		// 	self.send(pkt, cb);
-		// 	if (retries++ > 10) cb(new Error("failed afer "+ retries + " retries"));
-		// }, ACK_TIMEOUT);
+		if (pkt.readUInt8(0) !== START_BYTE) throw new TypeError("pkt is malformed (invalid start byte)");
 
 		self.sp.write(pkt, function() {
-			// clearTimeout(timeout);
 			console.log("write", pkt)
-			cb(null);
-		});
-	};
 
-	self.handshake = function(cb) {
-		var hs = self.createHandshake();
-		self.send(hs, function(err){
-			if (err) {
-				cb(err);
-				return;
-			}
+			var timeout = setTimeout(function() {
+				console.log("re-sending due to timeout");
+				self.event.removeListener('ack/nack', ackCB);
+				cb(TIME_OUT_ERR, null);
+			}, ACK_TIMEOUT);
 
 			var ackCB = function(ack, payload) {
+				console.log("ACK_CB", ack, payload)
+				clearTimeout(timeout);
 				if (!ack) {
-					self.handshake(cb);
+					// Not ack so we resend the same
+					self.send(pkt, cb);
 				} else {
 					cb(null, payload);
 				}
 			};
 
-			var timeout = setTimeout(function() {
-console.log("rehandshake");
-				self.event.removeListener('ack/nack', ackCB);
-				self.handshake(cb);
-			}, ACK_TIMEOUT);
+		self.event.once('ack/nack', ackCB);
+		});
+	};
 
-			self.event.once('ack/nack', ackCB);
+	self.handshake = function(cb) {
+		var hs = self.createHandshake();
+		self.send(hs, function(err) {
+			if (err == TIME_OUT_ERR) {
+				self.handshake(cb);
+			} else {
+				cb(err)
+			}
 		});
 	}
 
