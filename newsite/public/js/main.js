@@ -5,6 +5,7 @@ function escapeNonWords(s) {
     return s.replace(escapeNonWordsRegexp, "-");
 }
 
+var storage = [];
 var socket = io();
 var plots = {}; // Map of sensor -> chart
 var rawlist = {};
@@ -33,6 +34,11 @@ var updateSidebarValue = _.throttle(function(nameVal, pkt) {
 	document.getElementById(nameVal).innerHTML = pkt.value.toFixed(2);
 }, 1);
 
+//Retrieve storage from server, store it locally
+socket.on('storage', function(pkt){
+    storage = pkt;
+});
+
 socket.on('data', function(pkts){
 	for (var i = 0; i < pkts.length; i++) {
 		var pkt = pkts[i];
@@ -56,6 +62,7 @@ socket.on('data', function(pkts){
 			$('#log-number').append(options);
 		}
 		else{
+            storage.push(pkt);  //Push it onto local storage
 			var escapedName = escapeNonWords(pkt.name);
 			var nameVal = escapedName + '-val';
 			if (pkt.name in rawlist) {
@@ -68,8 +75,7 @@ socket.on('data', function(pkts){
 				if (pkt.name === "GX" || pkt.name === "GY") {
 					update_g_plot(pkt);
 				} else {
-					var shift = plots[pkt.name].series[0].data.length > 400;
-					plots[pkt.name].series[0].addPoint(pkt.value, false, shift);
+					addPlotPoint(pkt.name, pkt.value);
 				}
 			} else {
 				// Element does not exists, create it
@@ -96,6 +102,11 @@ socket.on('data', function(pkts){
 		});
 	}
 });
+
+function addPlotPoint(name, value){
+    var shift = plots[name].series[0].data.length > 400;
+    plots[name].series[0].addPoint(value, false, shift);
+}
 
 function is_in_circle(x) {
     x = x/4;                            //Only every 4th is a new pixel
@@ -179,7 +190,6 @@ function create_g_plot() {
 		$('#GX').css("background-color", "lightgrey");
 		$('#GY').css("background-color", "lightgrey");
 	}
-
 }
 
 function create_line_plot(name, value) {
@@ -224,9 +234,15 @@ function create_line_plot(name, value) {
                 data: [value],
             }],
         });
+        //for (var i = storage.length - 400; i < storage.length; i++) {
+        for (var i = 0; i < storage.length; i++) {
+            if (storage[i].name === name) {
+                addPlotPoint(name, storage[i].value);
+            }
+        }
     } else {  //ELement already exists, so we delete it
         plots[name].destroy();
-        $('#'+ escapeNonWords(name) + '-graph').remove();
+        $('#' + escapeNonWords(name) + '-graph').remove();
 		$('#' + escapeNonWords(name)).css("background-color", "lightgrey");
         delete plots[name];
     }
@@ -237,4 +253,16 @@ function download_data(){
     var logNumber = e.options[e.selectedIndex].text;
     requested_log_number = logNumber;
     socket.emit('download', logNumber);
+}
+function add_plotline(name){
+    if ($('#' + escapeNonWords(name) + '-graph').length == 0) {
+            $('#' + escapeNonWords(name) + '-graph').yAxis[0].addPlotline({
+            plotLines: [{
+                id: name +'-plotline',
+                color: 'red',
+                width: 1,
+                value: $('#' + name + '-watch').value
+            }]
+        });
+    }
 }

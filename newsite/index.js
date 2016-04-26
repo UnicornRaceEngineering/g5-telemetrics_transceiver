@@ -37,6 +37,8 @@ io.on('connection', function(socket){
     clientsConnected++; // increment amount of clients
     console.log('a client connected');
     console.log("Total: " + clientsConnected);
+    //Throw them session storage
+    io.emit('storage', storage);
     // Hook up for disconnect event
     socket.on('disconnect', function(){
         clientsConnected--; // decrement amount of clients
@@ -54,6 +56,8 @@ io.on('connection', function(socket){
         serialport.write(buf);
     });
 });
+
+var storage = [];
 
 var sendPackage = (function(){
 	var pktList = [];
@@ -102,6 +106,9 @@ serialport.on('open', function(error) {
                 pkt.value = require("./log2csv").toCsv(pkt.value);
 				// console.log(pkt)
             }
+            //Store the package locally
+            storage.push(pkt);
+            //Push the data live
             sendPackage('data', pkt);
         });
     });
