@@ -17,6 +17,7 @@ var ball_size = 6;
 var offset = ball_size/2; //Moves the ball object into center
 //TODO: Find a dynamic offset value, maybe derive from c.height & c.width
 var c, ctx, blocksize, ball;
+var requested_log_number = 0;
 
 setInterval(function() {
     for (var m in plots) {
@@ -26,7 +27,7 @@ setInterval(function() {
         }
         plot.redraw();
     }
-}, 500);
+}, 50);
 
 var updateSidebarValue = _.throttle(function(nameVal, pkt) {
 	document.getElementById(nameVal).innerHTML = pkt.value.toFixed(2);
@@ -41,8 +42,18 @@ socket.on('data', function(pkts){
 			var a = document.createElement('a');
 			a.href = 'data:attachment/csv;base64,' + btoa(csvString);
 			a.target = '_blank';
+			// a.download = 'LogData'+requested_log_number+'.csv';
 			a.download = 'LogData.csv';
 			a.click();
+			console.log(csvString);
+		} else if (pkt.name === "request num log") {
+			var nLogs = pkt.value;
+			var options = "";
+			for (var n = 0; n < nLogs; n++) {
+				options += '<option value="lognr">'+n+'</option>\n';
+			}
+			$('#log-number').empty();
+			$('#log-number').append(options);
 		}
 		else{
 			var escapedName = escapeNonWords(pkt.name);
@@ -222,6 +233,8 @@ function create_line_plot(name, value) {
 }
 
 function download_data(){
-    var logNumber = document.getElementById('log-number').value
+    var e = document.getElementById('log-number');
+    var logNumber = e.options[e.selectedIndex].text;
+    requested_log_number = logNumber;
     socket.emit('download', logNumber);
 }

@@ -44,6 +44,9 @@ io.on('connection', function(socket){
         console.log("Total: " + clientsConnected);
     });
 
+	serialport.write(new Buffer([0x02])); // request number of logs
+	console.log("\n\nsend req to car\n\n");
+
     socket.on('download', function(logNumber) {
         var buf = new Buffer(3); // 3: uint8 - uint16 -
         buf.writeUInt8(0x01, 0); // 1 is request log
@@ -97,6 +100,7 @@ serialport.on('open', function(error) {
             console.log(pkt, ",");
             if (pkt.name === "request log") {
                 pkt.value = require("./log2csv").toCsv(pkt.value);
+				// console.log(pkt)
             }
             sendPackage('data', pkt);
         });
@@ -109,7 +113,7 @@ serialport.on('error', function(error){
     console.log(error);
 });
 
-var debug = true;
+var debug = false;
 //Debug functions
 if(debug) {
     setInterval(function() {
@@ -173,14 +177,14 @@ if(debug) {
 		}, 10);
 	})();
 
-	// for (var i = 0; i < 50; i++) {
-	// 	(function(i){
-	// 		setInterval(function() {
-	// 			sendPackage('data', {
-	// 				name: 'data-' + i,
-	// 				value: Math.floor(Math.random() * i)-2.5
-	// 			});
-	// 		}, 10);
-	// 	})(i)
-	// }
+	for (var i = 0; i < 50; i++) {
+		(function(i){
+			setInterval(function() {
+				sendPackage('data', {
+					name: 'data-' + i,
+					value: Math.floor(Math.random() * i)-2.5
+				});
+			}, 10);
+		})(i)
+	}
 }

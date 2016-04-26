@@ -160,7 +160,7 @@ var unpack = function(buf, cb) {
 						i += b.length;
 
 						recvMultiPkt(b, function(err, data) {
-							pkt.value = data;
+							pkt.value = data.readInt16LE(0);
 							cb(err, pkt, i);
 						});
 						break;
