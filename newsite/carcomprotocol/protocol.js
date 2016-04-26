@@ -2,6 +2,7 @@
 
 var _ = require('lodash');
 var os = require('os');
+var assert = require('assert');
 var EventEmitter = require('events');
 var SerialPort = require('serialport').SerialPort;
 var schema = require("../schema");
@@ -97,25 +98,29 @@ var ports = {
 
 var createPkt = function(type, payload, reserved) {
 	if (typeof(type) != "number") throw new TypeError("type is not a number");
+	payload = payload || new Buffer(0); // defaults to empty buffer
 	if (!(payload instanceof Buffer)) throw new TypeError("payload is not a buffer");
-
 	reserved = reserved || new Buffer(0); // defaults to empty buffer
 	if (!(reserved instanceof Buffer)) throw new TypeError("reserved is not a buffer");
 
-	if (payload.length > (1 << 6)) throw new TypeError("payload is too big:" + payload.length);
-	var typeLen = (type << 6) | payload.length;
+	var total = payload.length + reserved.length;
+	if (total > (1 << 6)) throw new TypeError("payload is too big:" + total);
+	var typeLen = (type << 6) | total;
 
 	var i = 0;
 
-	// startbyte + type/length + payload + xorsum
-	var buf = new Buffer(1 + 1 + payload.length + 1);
+	// startbyte + type/length + reserved + payload + xorsum
+	var buf = new Buffer(1 + 1 + reserved.length + payload.length + 1);
 	buf.writeUInt8(START_BYTE, i++);
 	buf.writeUInt8(typeLen, i++);
 	reserved.copy(buf, i); // Copy the reserved into the buffer
 	i += reserved.length;
 	payload.copy(buf, i); // Copy the payload into the buffer
 	i += payload.length;
-	buf.writeUInt8(chksum(payload), i++);
+	buf.writeUInt8(chksum(reserved) ^ chksum(payload), i++);
+
+	assert(buf.length === i);
+
 	return buf;
 };
 
