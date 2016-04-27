@@ -99,7 +99,6 @@ var parser = function() {
 
 				var reserved = buf.slice(0, reservedLength);
 				var payload = buf.slice(reservedLength, buf.length);
-console.log("LOW", pktDescription, payload, reserved);
 				emitter.emit(pktDescription, payload, reserved);
 			}
 			self.resetState();
@@ -162,16 +161,12 @@ var protocol = function(emitter) {
 		if (pkt.readUInt8(0) !== START_BYTE) throw new TypeError("pkt is malformed (invalid start byte)");
 
 		self.sp.write(pkt, function() {
-			console.log("write", pkt)
-
 			var timeout = setTimeout(function() {
-				console.log("TIMEOUT");
 				self.event.removeListener('ack/nack', ackCB);
 				cb(TIME_OUT_ERR, null);
 			}, ACK_TIMEOUT);
 
 			var ackCB = function(ack, payload) {
-				console.log("ACK_CB", ack, payload)
 				clearTimeout(timeout);
 				if (!ack) {
 					// Not ack so we resend the same
@@ -198,7 +193,6 @@ var protocol = function(emitter) {
 
 	self.sendACK = function(ackOrNack, cb) {
 		var pkt = createPkt(PACKAGE_TYPE_ENUM["ack/nack"], null, new Buffer([ackOrNack]));
-		console.log("writeACK", pkt);
 		self.sp.write(pkt, cb);
 	};
 
@@ -237,7 +231,6 @@ var protocol = function(emitter) {
 		parser: (function() {
 			var p = new parser();
 			return function(emitter, buf) {
-console.log("raw input:", buf);
 				_.forEach(buf, function(b) {
 					p.addByte(b, emitter);
 				});
@@ -284,8 +277,6 @@ console.log("raw input:", buf);
 
 		self.sp.on('ack/nack', function(payload, reserved) {
 			var ackStatus = reserved.readUInt8(0) == true;
-console.log(ackStatus, payload);
-
 			self.event.emit('ack/nack', ackStatus, payload);
 		});
 
