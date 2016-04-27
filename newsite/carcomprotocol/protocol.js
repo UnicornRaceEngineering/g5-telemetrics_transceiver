@@ -38,6 +38,21 @@ var chksum = function(buff) {
 	}, 0);
 };
 
+var concatBuffers = function(buffers) {
+	var buf = new Buffer(_.reduce(buffers, function(sum, n) {
+		return sum + n.length;
+	} ,0));
+
+	var i = 0;
+	_.forEach(buffers, function(chunk) {
+		chunk.copy(buf, i);
+		i += chunk.length;
+	});
+
+	assert(i === buf.length);
+	return buf
+};
+
 var parser = function() {
 	var self = this;
 
@@ -208,21 +223,7 @@ var protocol = function(emitter) {
 				// Empty chunk signals end
 				if (chunk.length === 0) {
 					self.event.removeListener("req/res", recvChunk);
-
-					// concat all chunks into a new buffer
-					var buf = new Buffer(_.reduce(chunks, function(sum, n) {
-						return sum + n.length;
-					} ,0));
-
-					var i = 0;
-					_.forEach(chunks, function(chunk) {
-						chunk.copy(buf, i);
-						i += chunk.length;
-					});
-
-					assert(i === buf.length);
-
-					cb(null, buf);
+					cb(null, concatBuffers(chunks));
 				}
 			};
 
