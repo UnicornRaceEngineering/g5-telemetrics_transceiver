@@ -39,18 +39,11 @@ var chksum = function(buff) {
 };
 
 var concatBuffers = function(buffers) {
-	var buf = new Buffer(_.reduce(buffers, function(sum, n) {
-		return sum + n.length;
-	} ,0));
-
-	var i = 0;
-	_.forEach(buffers, function(chunk) {
-		chunk.copy(buf, i);
-		i += chunk.length;
-	});
-
-	assert(i === buf.length);
-	return buf
+	var buf = new Buffer(_.sum(buffers, function(b) {return b.length;}));
+	_(buffers).reduce(function(acc, chunk) {
+		return acc + chunk.copy(buf, acc);
+	}, 0);
+	return buf;
 };
 
 var parser = function() {
