@@ -106,11 +106,11 @@ var ports = {
 };
 
 var createPkt = function(type, payload, reserved) {
-	if (typeof(type) != "number") throw new TypeError("type is not a number");
+	if (!_.isInteger(type)) throw new TypeError("type is not a number");
 	payload = payload || new Buffer(0); // defaults to empty buffer
-	if (!(payload instanceof Buffer)) throw new TypeError("payload is not a buffer");
+	if (!_.isBuffer(payload)) throw new TypeError("payload is not a buffer");
 	reserved = reserved || new Buffer(0); // defaults to empty buffer
-	if (!(reserved instanceof Buffer)) throw new TypeError("reserved is not a buffer");
+	if (!_.isBuffer(reserved)) throw new TypeError("reserved is not a buffer");
 
 	var total = payload.length + reserved.length;
 	if (total > (1 << 6)) throw new TypeError("payload is too big:" + total);
