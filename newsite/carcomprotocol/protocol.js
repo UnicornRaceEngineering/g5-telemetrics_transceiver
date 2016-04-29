@@ -32,6 +32,9 @@ var PACKAGE_TYPE_RESERVED_LENGTH = {
 	"stream-data": 0,
 };
 
+// see http://stackoverflow.com/a/6798829
+var toUint = function(x) { return x >>> 0; };
+
 var chksum = function(buff) {
 	return _.reduce(buff, function(sum, n) {
 		return sum ^= n;
@@ -71,9 +74,9 @@ var parser = function() {
 		} else if (!self.foundTypeAndLength) {
 			self.foundTypeAndLength = true;
 
-			var topTwoBitsMSK = (((1 << 0) | (1 << 1)) << 6);
-			self.pktType = b >> 6; // two top bits. We just shift the lower bits away
-			self.len = b & (~topTwoBitsMSK); // remove two top bits, keeping the lower 6 bits
+			var topTwoBitsMSK = toUint(((1 << 0) | (1 << 1)) << 6);
+			self.pktType = toUint(b >>> 6); // two top bits. We just shift the lower bits away
+			self.len = toUint(b & (~topTwoBitsMSK)); // remove two top bits, keeping the lower 6 bits
 		} else if (self.payload.length < self.len) {
 			self.payload.push(b);
 		} else {
@@ -113,8 +116,8 @@ var createPkt = function(type, payload, reserved) {
 	if (!_.isBuffer(reserved)) throw new TypeError("reserved is not a buffer");
 
 	var total = payload.length + reserved.length;
-	if (total > (1 << 6)) throw new TypeError("payload is too big:" + total);
-	var typeLen = (type << 6) | total;
+	if (total > toUint(1 << 6)) throw new TypeError("payload is too big:" + total);
+	var typeLen = toUint((type << 6) | total);
 
 	var i = 0;
 
