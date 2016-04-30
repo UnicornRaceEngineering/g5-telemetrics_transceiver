@@ -4,7 +4,7 @@
   "description": "Unicorn Telemetrics Tranceiver",
   "dependencies": {
     "express": "^4.9.5",
-    "lodash": "^3.3.1",
+    "lodash": "^4.11.1",
     "node-int64": "^0.3.3",
     "serialport": "^2.0.5",
     "socket.io": "^1.1.0"
