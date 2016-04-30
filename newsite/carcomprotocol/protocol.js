@@ -234,7 +234,7 @@ var protocol = function(emitter) {
 		})(),
 	});
 	self.sp.on('error', function(err) {
-		if (err.message.startsWith("Invalid checksum.")) {
+		if (_.startsWith(err.message, "Invalid checksum.")) {
 			self.sendACK(false, function(err) {
 				if (err) throw err;
 			});
