@@ -32,6 +32,10 @@ var PACKAGE_TYPE_RESERVED_LENGTH = {
 	"stream-data": 0,
 };
 
+var debug = function() {
+	if (true) console.log.apply(console, arguments);
+};
+
 // see http://stackoverflow.com/a/6798829
 var toUint = function(x) { return x >>> 0; };
 
@@ -156,6 +160,7 @@ var protocol = function(emitter) {
 		if (!(pkt instanceof Buffer)) throw new TypeError("pkt is not a buffer");
 		if (pkt.readUInt8(0) !== START_BYTE) throw new TypeError("pkt is malformed (invalid start byte)");
 
+		debug("SEND", "pkt", pkt);
 		self.sp.write(pkt, function() {
 			var timeout = setTimeout(function() {
 				self.event.removeListener('ack/nack', ackCB);
@@ -166,6 +171,7 @@ var protocol = function(emitter) {
 				clearTimeout(timeout);
 				if (!ack) {
 					// Not ack so we resend the same
+					debug("SEND", "received NACK");
 					self.send(pkt, cb);
 				} else {
 					cb(null, payload);
@@ -180,6 +186,7 @@ var protocol = function(emitter) {
 		var hs = self.createHandshake();
 		self.send(hs, function(err) {
 			if (err == TIME_OUT_ERR) {
+				debug("Resending handshake", hs);
 				self.handshake(cb);
 			} else {
 				cb(err)
@@ -227,6 +234,7 @@ var protocol = function(emitter) {
 		parser: (function() {
 			var p = new parser();
 			return function(emitter, buf) {
+				debug("RAW RECV", buf);
 				_.forEach(buf, function(b) {
 					p.addByte(b, emitter);
 				});
@@ -273,6 +281,7 @@ var protocol = function(emitter) {
 
 		self.sp.on('ack/nack', function(payload, reserved) {
 			var ackStatus = reserved.readUInt8(0) == true;
+			debug("RECV ack/nack", ackStatus);
 			self.event.emit('ack/nack', ackStatus, payload);
 		});
 
@@ -280,6 +289,7 @@ var protocol = function(emitter) {
 			if (err) {
 				throw err;
 			}
+			debug("handshake successfull");
 			self.emitter.emit('open', err);
 		});
 	});
