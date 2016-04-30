@@ -143,7 +143,10 @@ var createPkt = function(type, payload, reserved) {
 var protocol = function(emitter) {
 	var self = this;
 	self.emitter = emitter || new EventEmitter();
-	self.event = new EventEmitter(); // for internal events
+	self.callbacks = {
+		ack: function(){},
+		reqres: function(){},
+	};
 
 	self.createHandshake = function() {
 		var ts = Math.round((new Date()).getTime() / 1000);
@@ -163,11 +166,10 @@ var protocol = function(emitter) {
 		debug("SEND", "pkt", pkt);
 		self.sp.write(pkt, function() {
 			var timeout = setTimeout(function() {
-				self.event.removeListener('ack/nack', ackCB);
 				cb(TIME_OUT_ERR, null);
 			}, ACK_TIMEOUT);
 
-			var ackCB = function(ack, payload) {
+			self.callbacks.ack = function(ack, payload) {
 				clearTimeout(timeout);
 				if (!ack) {
 					// Not ack so we resend the same
@@ -177,8 +179,6 @@ var protocol = function(emitter) {
 					cb(null, payload);
 				}
 			};
-
-			self.event.once('ack/nack', ackCB);
 		});
 	};
 
@@ -210,7 +210,7 @@ var protocol = function(emitter) {
 		self.send(pkt, function(err) {
 			if (err) throw err;
 
-			var recvChunk = function(chunk) {
+			self.callbacks.reqres = function(chunk) {
 				chunks.push(chunk);
 
 				self.sendACK(true, function(err) {
@@ -219,12 +219,9 @@ var protocol = function(emitter) {
 
 				// Empty chunk signals end
 				if (chunk.length === 0) {
-					self.event.removeListener("req/res", recvChunk);
 					cb(null, concatBuffers(chunks));
 				}
 			};
-
-			self.event.on("req/res", recvChunk);
 		});
 	}
 
@@ -256,7 +253,7 @@ var protocol = function(emitter) {
 		if (err) console.warn(err);
 
 		self.sp.on('request/response', function(payload) {
-			self.event.emit("req/res", payload);
+			self.callbacks.reqres(payload);
 		});
 
 		self.sp.on('handshake', function() {
@@ -282,7 +279,7 @@ var protocol = function(emitter) {
 		self.sp.on('ack/nack', function(payload, reserved) {
 			var ackStatus = reserved.readUInt8(0) == true;
 			debug("RECV ack/nack", ackStatus);
-			self.event.emit('ack/nack', ackStatus, payload);
+			self.callbacks.ack(ackStatus, payload);
 		});
 
 		self.handshake(function(err) {
