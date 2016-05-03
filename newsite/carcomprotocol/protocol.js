@@ -25,6 +25,12 @@ _.forEach(PACKAGE_TYPE_ENUM, function(n, key) {
 	PACKAGE_TYPE_ENUM[n] = key;
 });
 
+var REQUESTS_ENUM = {
+	GET_LOG: 0,
+	GET_NUM_LOG: 1,
+
+};
+
 var PACKAGE_TYPE_RESERVED_LENGTH = {
 	"handshake": 0,
 	"ack/nack": 1,
@@ -199,13 +205,9 @@ var protocol = function(emitter) {
 		self.sp.write(pkt, cb);
 	};
 
-	self.makeRequest = function(req, cb) {
-		var payload = new Buffer(1);
-		payload.writeUInt8(req, 0);
-
-		var pkt = createPkt(PACKAGE_TYPE_ENUM["request/response"], payload);
-
-		var chunks = [];
+	self.makeRequest = function(req, payload, cb) {
+		var buf = concatBuffers([new Buffer([req]), payload]);
+		var pkt = createPkt(PACKAGE_TYPE_ENUM["request/response"], buf);
 
 		self.send(pkt, function(err) {
 			if (err) throw err;
@@ -219,11 +221,31 @@ var protocol = function(emitter) {
 
 				// Empty chunk signals end
 				if (chunk.length === 0) {
-					cb(null, concatBuffers(chunks));
+					self.callbacks.reqres = function(){};
 				}
+				cb(null, chunk);
 			};
 		});
-	}
+	};
+
+	self.requestLogfile = function(logNumber, cb) {
+		var payload = new Buffer(2);
+		payload.writeUInt16LE(logNumber, 0);
+
+		var chunks = [];
+		var remaining = null;
+
+		self.makeRequest(REQUESTS_ENUM.GET_LOG, payload, function(err, chunk) {
+			// The first chunk only contains the total length;
+			if (remaining === null) {
+				remaining = chunk.readUInt32LE(0);
+			} else {
+				chunks.push(chunk);
+				remaining -= chunk.length;
+				cb(err, remaining, concatBuffers(chunks));
+			}
+		});
+	};
 
 	var port = "/dev/tty.usbserial-A600JE0S"; //ports[os.platform()];
 	self.sp = new SerialPort(port, {
@@ -300,9 +322,18 @@ var p = new protocol(proto);
 proto.on('open', function(err) {
 	if (err) throw err;
 
-	p.makeRequest(0x00, function(err, response) {
-		if (err) throw err;
-		console.log("done making request");
-		console.log(response);
-	})
+	console.log("open");
+
+	var req = function() {
+		var logNumber = 0;
+		p.requestLogfile(logNumber, function(err, remaining, log) {
+			if (err) throw err;
+			// console.log("done making request");
+			console.log(remaining);
+
+			if (remaining === 0) setTimeout(req, 1000*10);
+		});
+	};
+	req();
+
 });
