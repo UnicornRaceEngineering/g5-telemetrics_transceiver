@@ -52,7 +52,7 @@ var chksum = function(buff) {
 };
 
 var concatBuffers = function(buffers) {
-	var buf = new Buffer(_.sum(buffers, function(b) {return b.length;}));
+	var buf = new Buffer(_.sumBy(buffers, function(b) {return b.length;}));
 	_(buffers).reduce(function(acc, chunk) {
 		return acc + chunk.copy(buf, acc);
 	}, 0);
@@ -175,7 +175,7 @@ var protocol = function(emitter) {
 				cb(TIME_OUT_ERR, null);
 			}, ACK_TIMEOUT);
 
-			self.callbacks.ack = function(ack, payload) {
+			self.callbacks.ack = _.once(function(ack, payload) {
 				clearTimeout(timeout);
 				if (!ack) {
 					// Not ack so we resend the same
@@ -184,7 +184,7 @@ var protocol = function(emitter) {
 				} else {
 					cb(null, payload);
 				}
-			};
+			});
 		});
 	};
 
