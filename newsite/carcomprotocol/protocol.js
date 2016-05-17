@@ -298,7 +298,9 @@ var protocol = function(emitter) {
 
 			schema.unpack(data, function(err, pkt) {
 				if (err) {
-					console.warn(err);
+					// console.warn(err);
+					console.warn(err.stack)
+
 					return
 				}
 
