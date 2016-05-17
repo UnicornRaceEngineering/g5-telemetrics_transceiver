@@ -283,7 +283,19 @@ var protocol = function(emitter) {
 			console.log("recv handshake");
 		});
 
+		var totalLiveRecv = 0;
+		var start = new Date().getTime();
 		self.sp.on('stream-data', function(data) {
+			totalLiveRecv += data.length;
+			var now = new Date().getTime();
+			var since = (now - start) / 1000;
+			console.log("livedatabytes/sec", totalLiveRecv/since);
+			// reset every 5 seconds
+			if (since > 5) {
+				start = now;
+				totalLiveRecv = 0;
+			}
+
 			schema.unpack(data, function(err, pkt) {
 				if (err) {
 					console.warn(err);
