@@ -114,7 +114,7 @@ var parser = function() {
 
 var ports = {
 	"linux": "/dev/ttyUSB0",
-	"darwin": "/dev/tty.usbserial-A900FLLE",
+	"darwin": "/dev/tty.usbserial-A700eCo8",//"/dev/tty.usbserial-A900FLLE",
 	"win32": "COM3",
 };
 
@@ -195,12 +195,13 @@ var protocol = function(emitter) {
 				debug("Resending handshake", hs);
 				self.handshake(cb);
 			} else {
-				cb(err)
+				cb(err);
 			}
 		});
 	};
 
 	self.sendACK = function(ackOrNack, cb) {
+		debug("Sending ack", ackOrNack);
 		var pkt = createPkt(PACKAGE_TYPE_ENUM["ack/nack"], null, new Buffer([ackOrNack]));
 		self.sp.write(pkt, cb);
 	};
@@ -213,8 +214,7 @@ var protocol = function(emitter) {
 			if (err) throw err;
 
 			self.callbacks.reqres = function(chunk) {
-				chunks.push(chunk);
-
+				debug("RECV chunk", chunk);
 				self.sendACK(true, function(err) {
 					if (err) throw err;
 				});
@@ -247,13 +247,14 @@ var protocol = function(emitter) {
 		});
 	};
 
-	var port = "/dev/tty.usbserial-A600JE0S"; //ports[os.platform()];
+	var port = "/dev/tty.usbserial-A900FLLE"; //"/dev/tty.usbserial-A600JE0S"; //ports[os.platform()];
 	self.sp = new SerialPort(port, {
 		baudrate: 115200,
 		parser: (function() {
 			var p = new parser();
 			return function(emitter, buf) {
-				debug("RAW RECV", buf);
+				// debug("RAW RECV", buf);
+
 				_.forEach(buf, function(b) {
 					p.addByte(b, emitter);
 				});
