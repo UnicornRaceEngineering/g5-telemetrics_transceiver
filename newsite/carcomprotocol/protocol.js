@@ -345,26 +345,27 @@ var protocol = function(emitter) {
 	});
 
 };
+module.exports = protocol;
 
 // TEST EXAMPLE
-var proto = new EventEmitter();
-var p = new protocol(proto);
+// var proto = new EventEmitter();
+//var p = new protocol(/*proto*/);
 
-proto.on('open', function(err) {
-	if (err) throw err;
-
-	console.log("open");
-
-	var req = function() {
-		var logNumber = 0;
-		p.requestLogfile(logNumber, function(err, remaining, log) {
-			if (err) console.warn(err);
-			// console.log("done making request");
-			console.log(remaining);
-
-			if (remaining === 0) setTimeout(req, 1000*10);
-		});
-	};
-	req();
-
-});
+// p.emitter.on('open', function(err) {
+// 	if (err) throw err;
+//
+// 	console.log("open");
+//
+// 	var req = function() {
+// 		var logNumber = 0;
+// 		p.requestLogfile(logNumber, function(err, remaining, log) {
+// 			if (err) console.warn(err);
+// 			// console.log("done making request");
+// 			console.log(remaining);
+//
+// 			if (remaining === 0) setTimeout(req, 1000*10);
+// 		});
+// 	};
+// 	req();
+//
+// });
