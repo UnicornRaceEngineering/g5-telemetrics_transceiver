@@ -211,7 +211,10 @@ var protocol = function(emitter) {
 		var pkt = createPkt(PACKAGE_TYPE_ENUM["request/response"], buf);
 
 		self.send(pkt, function(err) {
-			if (err) throw err;
+			if (err) {
+				cb(err, null);
+				return
+			}
 
 			self.callbacks.reqres = function(chunk) {
 				debug("RECV chunk", chunk);
@@ -236,6 +239,11 @@ var protocol = function(emitter) {
 		var remaining = null;
 
 		self.makeRequest(REQUESTS_ENUM.GET_LOG, payload, function(err, chunk) {
+			if (err) {
+				cb(err, remaining, concatBuffers(chunks));
+				return;
+			}
+
 			// The first chunk only contains the total length;
 			if (remaining === null) {
 				remaining = chunk.readUInt32LE(0);
@@ -283,6 +291,8 @@ var protocol = function(emitter) {
 			console.log("recv handshake");
 		});
 
+		var isResendingHandshake = false;
+
 		var totalLiveRecv = 0;
 		var start = new Date().getTime();
 		self.sp.on('stream-data', function(data) {
@@ -292,6 +302,16 @@ var protocol = function(emitter) {
 			console.log("livedatabytes/sec", totalLiveRecv/since);
 			// reset every 5 seconds
 			if (since > 5) {
+				if (totalLiveRecv === 0 && !isResendingHandshake) {
+					// Something is wrong! Resend the handshake
+					isResendingHandshake = true;
+					self.handshake(function(err) {
+						if (err) console.warn(err);
+						isResendingHandshake = false;
+					});
+				}
+
+				// Reset recv counters
 				start = now;
 				totalLiveRecv = 0;
 			}
@@ -300,7 +320,6 @@ var protocol = function(emitter) {
 				if (err) {
 					// console.warn(err);
 					console.warn(err.stack)
-
 					return
 				}
 
@@ -320,10 +339,7 @@ var protocol = function(emitter) {
 		});
 
 		self.handshake(function(err) {
-			if (err) {
-				throw err;
-			}
-			debug("handshake successfull");
+			if (!err) debug("handshake successfull");
 			self.emitter.emit('open', err);
 		});
 	});
@@ -342,7 +358,7 @@ proto.on('open', function(err) {
 	var req = function() {
 		var logNumber = 0;
 		p.requestLogfile(logNumber, function(err, remaining, log) {
-			if (err) throw err;
+			if (err) console.warn(err);
 			// console.log("done making request");
 			console.log(remaining);
 
