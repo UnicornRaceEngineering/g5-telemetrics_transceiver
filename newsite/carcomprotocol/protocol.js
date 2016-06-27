@@ -9,6 +9,8 @@ var schema = require("../schema");
 var log2csv = require("../log2csv");
 
 var TIME_OUT_ERR = new Error("Send timed out");
+var RECV_EXTRA_CHUNK_ERR = new Error("recved extra chunk");
+var NO_SUCH_FILE_ERR = new Error("No such file");
 
 var ACK_TIMEOUT = 100;
 
@@ -224,7 +226,10 @@ var protocol = function(emitter) {
 
 				// Empty chunk signals end
 				if (chunk.length === 0) {
-					self.callbacks.reqres = function(){};
+					self.callbacks.reqres = function(chunk){
+						// TODO Maybe we should emit an error instead?
+						cb(RECV_EXTRA_CHUNK_ERR, chunk);
+					};
 				}
 				cb(null, chunk);
 			};
@@ -247,6 +252,9 @@ var protocol = function(emitter) {
 			// The first chunk only contains the total length;
 			if (remaining === null) {
 				remaining = chunk.readUInt32LE(0);
+				if (remaining === 0) {
+					cb(NO_SUCH_FILE_ERR, remaining, concatBuffers(chunks));
+				}
 			} else {
 				chunks.push(chunk);
 				remaining -= chunk.length;
