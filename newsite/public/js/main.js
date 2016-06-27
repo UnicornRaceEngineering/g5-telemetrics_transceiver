@@ -32,17 +32,27 @@ var updateSidebarValue = _.throttle(function(nameVal, pkt) {
 	document.getElementById(nameVal).innerHTML = pkt.value.toFixed(2);
 }, 1);
 
+socket.on('download-log', function(csvLog) {
+	var a = document.createElement('a');
+	a.href = 'data:attachment/csv;base64,' + btoa(csvLog);
+	a.target = '_blank';
+	a.download = 'LogData.csv';
+	a.click();
+});
+
+socket.on('download-log-remaining', function(remainingBytes) {
+	// TODO Show the user a progress bar
+	console.log("remainingBytes:", remainingBytes);
+	// throw "Not yet implemented";
+})
+
 socket.on('data', function(pkts){
 	for (var i = 0; i < pkts.length; i++) {
 		var pkt = pkts[i];
 
 		if (pkt.name === "request log") {
-			var csvString = pkt.value;
-			var a = document.createElement('a');
-			a.href = 'data:attachment/csv;base64,' + btoa(csvString);
-			a.target = '_blank';
-			a.download = 'LogData.csv';
-			a.click();
+			// TODO remove this if?
+			throw "Should never happen"
 		}
 		else{
 			var escapedName = escapeNonWords(pkt.name);

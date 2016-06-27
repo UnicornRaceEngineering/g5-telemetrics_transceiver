@@ -8,8 +8,7 @@ var express = require('express');
 var app = express();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
-var SerialPort = require('serialport').SerialPort;
-var schema = require("./schema");
+var carprotocol = require('./carcomprotocol/protocol');
 
 require("serialport").list(function (err, ports) {
     ports.forEach(function(port) {
@@ -17,20 +16,17 @@ require("serialport").list(function (err, ports) {
     });
 });
 
-// Open a connection to a serial port
-var ports = {
-    "linux": "/dev/ttyUSB0",
-    "darwin": "/dev/tty.usbserial-A900FLLE",
-    "win32": "COM3",
-};
-var serialport = new SerialPort(ports[os.platform()], {
-    baudrate: 115200,
-    parser: require('./parser')(),
-});
 var clientsConnected = 0; // Keep statistics of the amount of connected clients
 
 app.use(express.static(path.join(__dirname, 'public')));
 
+var proto = new carprotocol();
+proto.emitter.on('open', function() {
+	proto.emitter.on('data', function(pkt) {
+		console.log(pkt);
+		sendPackage('data', pkt);
+	})
+});
 
 // We hook up on the socket.io connection event.
 io.on('connection', function(socket){
@@ -45,10 +41,21 @@ io.on('connection', function(socket){
     });
 
     socket.on('download', function(logNumber) {
-        var buf = new Buffer(3); // 3: uint8 - uint16 -
-        buf.writeUInt8(0x01, 0); // 1 is request log
-        buf.writeUInt16LE(logNumber, 1);
-        serialport.write(buf);
+		proto.requestLogfile(logNumber, function(err, remaining, log) {
+			if (err) {
+				if (err.toString() === "Error: No such file") {
+
+				} else {
+					throw err;
+					return;
+				}
+			}
+			socket.emit('download-log-remaining', remaining);
+			if (remaining === 0) {
+				var csvLog = require("./log2csv").toCsv(log)
+				socket.emit('download-log', csvLog);
+			}
+		});
     });
 });
 
@@ -74,42 +81,14 @@ var sendPackage = (function(){
 	};
 })();
 
-
 // We make the http server listen to port 3000
 var PORT = 3000;
 http.listen(PORT, function(){
     console.log('listening on port', PORT);
 });
 
-// the serial port is opened asynchronously, meaning we are not able to read data
-// before the 'open' event has happened.
-serialport.on('open', function(error) {
-    if (error) console.log(error);
-    console.log('Serial port is now open');
 
-    // Event for received data
-    serialport.on('data', function(data){
-        schema.unpack(data, function(err, pkt) {
-            if (err) {
-                console.warn(err);
-                return
-            }
-            console.log(pkt, ",");
-            if (pkt.name === "request log") {
-                pkt.value = require("./log2csv").toCsv(pkt.value);
-            }
-            sendPackage('data', pkt);
-        });
-    });
-
-
-});
-serialport.on('error', function(error){
-    //throw new Error(error);
-    console.log(error);
-});
-
-var debug = true;
+var debug = false;
 //Debug functions
 if(debug) {
     setInterval(function() {
