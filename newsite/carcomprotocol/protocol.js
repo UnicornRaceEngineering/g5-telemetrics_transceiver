@@ -40,6 +40,29 @@ var PACKAGE_TYPE_RESERVED_LENGTH = {
 	"stream-data": 0,
 };
 
+var getPort = function(cb) {
+	var isFound = false;
+	require("serialport").list(function (err, ports) {
+		if (err) throw err;
+		ports.forEach(function(p) {
+			if (p.manufacturer === "FTDI") {
+				var port = p.comName;
+				if (!isFound) cb(port);
+				isFound = true;
+			}
+		});
+	});
+	if (!isFound) {
+		var ports = {
+			"linux": "/dev/ttyUSB0",
+			"darwin": "/dev/tty.usbserial-A700eCo8",//"/dev/tty.usbserial-A900FLLE",
+			"win32": "COM3",
+		};
+		cb(ports[os.platform()]);
+	}
+};
+
+
 var debug = function() {
 	if (true) console.log.apply(console, arguments);
 };
@@ -112,12 +135,6 @@ var parser = function() {
 			self.resetState();
 		}
 	};
-};
-
-var ports = {
-	"linux": "/dev/ttyUSB0",
-	"darwin": "/dev/tty.usbserial-A700eCo8",//"/dev/tty.usbserial-A900FLLE",
-	"win32": "COM3",
 };
 
 var createPkt = function(type, payload, reserved) {
@@ -263,95 +280,96 @@ var protocol = function(emitter) {
 		});
 	};
 
-	var port = "/dev/tty.usbserial-A900FLLE"; //"/dev/tty.usbserial-A600JE0S"; //ports[os.platform()];
-	self.sp = new SerialPort(port, {
-		baudrate: 115200,
-		parser: (function() {
-			var p = new parser();
-			return function(emitter, buf) {
-				// debug("RAW RECV", buf);
+	getPort(function(port) {
+		self.sp = new SerialPort(port, {
+			baudrate: 115200,
+			parser: (function() {
+				var p = new parser();
+				return function(emitter, buf) {
+					// debug("RAW RECV", buf);
 
-				_.forEach(buf, function(b) {
-					p.addByte(b, emitter);
-				});
-			};
-		})(),
-	});
-	self.sp.on('error', function(err) {
-		if (_.startsWith(err.message, "Invalid checksum.")) {
-			self.sendACK(false, function(err) {
-				if (err) throw err;
-			});
-		} else {
-			console.warn(err);
-		}
-	});
-
-
-	self.sp.on('open', function(err) {
-		if (err) console.warn(err);
-
-		self.sp.on('request/response', function(payload) {
-			self.callbacks.reqres(payload);
-		});
-
-		self.sp.on('handshake', function() {
-			console.log("recv handshake");
-		});
-
-		var isResendingHandshake = false;
-
-		var totalLiveRecv = 0;
-		var start = new Date().getTime();
-		self.sp.on('stream-data', function(data) {
-			totalLiveRecv += data.length;
-			var now = new Date().getTime();
-			var since = (now - start) / 1000;
-			console.log("livedatabytes/sec", totalLiveRecv/since);
-			// reset every 5 seconds
-			if (since > 5) {
-				if (totalLiveRecv === 0 && !isResendingHandshake) {
-					// Something is wrong! Resend the handshake
-					isResendingHandshake = true;
-					self.handshake(function(err) {
-						if (err) console.warn(err);
-						isResendingHandshake = false;
+					_.forEach(buf, function(b) {
+						p.addByte(b, emitter);
 					});
-				}
-
-				// Reset recv counters
-				start = now;
-				totalLiveRecv = 0;
+				};
+			})(),
+		});
+		self.sp.on('error', function(err) {
+			if (_.startsWith(err.message, "Invalid checksum.")) {
+				self.sendACK(false, function(err) {
+					if (err) throw err;
+				});
+			} else {
+				console.warn(err);
 			}
+		});
 
-			schema.unpack(data, function(err, pkt) {
-				if (err) {
-					// console.warn(err);
-					console.warn(err.stack)
-					return
+
+		self.sp.on('open', function(err) {
+			if (err) console.warn(err);
+
+			self.sp.on('request/response', function(payload) {
+				self.callbacks.reqres(payload);
+			});
+
+			self.sp.on('handshake', function() {
+				console.log("recv handshake");
+			});
+
+			var isResendingHandshake = false;
+
+			var totalLiveRecv = 0;
+			var start = new Date().getTime();
+			self.sp.on('stream-data', function(data) {
+				totalLiveRecv += data.length;
+				var now = new Date().getTime();
+				var since = (now - start) / 1000;
+				console.log("livedatabytes/sec", totalLiveRecv/since);
+				// reset every 5 seconds
+				if (since > 5) {
+					if (totalLiveRecv === 0 && !isResendingHandshake) {
+						// Something is wrong! Resend the handshake
+						isResendingHandshake = true;
+						self.handshake(function(err) {
+							if (err) console.warn(err);
+							isResendingHandshake = false;
+						});
+					}
+
+					// Reset recv counters
+					start = now;
+					totalLiveRecv = 0;
 				}
 
-				console.log(pkt);
+				schema.unpack(data, function(err, pkt) {
+					if (err) {
+						// console.warn(err);
+						console.warn(err.stack)
+						return
+					}
 
-				if (pkt.name === "request log") {
-					pkt.value = log2csv.toCsv(pkt.value);
-				}
-				self.emitter.emit("data", pkt);
+					// console.log(pkt);
+
+					if (pkt.name === "request log") {
+						pkt.value = log2csv.toCsv(pkt.value);
+					}
+					self.emitter.emit("data", pkt);
+				});
+			});
+
+			self.sp.on('ack/nack', function(payload, reserved) {
+				var ackStatus = reserved.readUInt8(0) == true;
+				debug("RECV ack/nack", ackStatus);
+				self.callbacks.ack(ackStatus, payload);
+			});
+
+
+			self.handshake(function(err) {
+				if (!err) debug("handshake successfull");
+				self.emitter.emit('open', err);
 			});
 		});
-
-		self.sp.on('ack/nack', function(payload, reserved) {
-			var ackStatus = reserved.readUInt8(0) == true;
-			debug("RECV ack/nack", ackStatus);
-			self.callbacks.ack(ackStatus, payload);
-		});
-
-		self.handshake(function(err) {
-			if (!err) debug("handshake successfull");
-			self.emitter.emit('open', err);
-		});
 	});
-
 };
 module.exports = protocol;
 
