@@ -22,7 +22,7 @@ setInterval(function() {
     for (var m in plots) {
         var plot = plots[m];
         if (typeof plot.redraw === "undefined") {
-            continue
+            continue;
         }
         plot.redraw();
     }
