@@ -8,15 +8,21 @@ body {
 	font: 13px Helvetica, Arial;
 	width: 100%;
 }
+
+h1 {
+	margin-top: 0px;
+	margin-bottom:  0px;
+}
+
     .left {
         position:absolute;
-        left:0; top:92px; right: 0; bottom: 0;
+        left:0; top:65px; right: 0; bottom: 0;
         width: 250px;
 		overflow-y: scroll
     }
     .content {
         position: absolute;
-        left:250px; top:92px; right:0; bottom:0;
+        left:250px; top:65px; right:0; bottom:0;
     }
 
 #rawlist {
@@ -50,7 +56,7 @@ body {
 	padding: 0px;
 	float: left;
 	width: 49%;
-	height: 270px;
+	height: 200px;
 	font-size: 2em;
 	text-align: center;
 	text-indent: center;

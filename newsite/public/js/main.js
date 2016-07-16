@@ -67,7 +67,7 @@ socket.on('data', function(pkts){
 				if (pkt.name === "GX" || pkt.name === "GY") {
 					update_g_plot(pkt);
 				} else {
-					var shift = plots[pkt.name].series[0].data.length > 400;
+					var shift = plots[pkt.name].series[0].data.length > 2000;
 					plots[pkt.name].series[0].addPoint(pkt.value, false, shift);
 				}
 			} else {
@@ -195,6 +195,13 @@ function create_line_plot(name, value) {
             },
             title: {
                 text: _.escape(name),
+                margin: 0
+            },
+            credits: {
+	            enabled: false
+	        },
+            legend: {
+            	enabled: false
             },
             xAxis: {
                 labels: {
