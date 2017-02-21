@@ -88,7 +88,7 @@ http.listen(PORT, function(){
 });
 
 
-var debug = false;
+var debug = true;
 //Debug functions
 if(debug) {
     setInterval(function() {
