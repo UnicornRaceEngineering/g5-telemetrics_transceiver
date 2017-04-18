@@ -10,7 +10,10 @@ var plots = {}; // Map of sensor -> chart
 var rawlist = {};
 var packets = [];
 
-var PLOTLENGTH = 200;   //Data points in plots before shifting
+var PLOTLENGTH = 100;   //Data points in plots before shifting
+//TODO: Replace with isScrolling which is bound to site slider
+var scrolling = false;  //Is true when scrolling through older data - Stops redrawing of plots
+
 
 //Variables used for the canvas.
 var x_pos = 0;
@@ -20,10 +23,9 @@ var ball_size = 6;
 var offset = ball_size/2; //Moves the ball object into center
 //TODO: Find a dynamic offset value, maybe derive from c.height & c.width
 var c, ctx, blocksize, ball;
-var scrolling = false;  //Is true when scrolling through older data
 
 setInterval(function() {
-    if (!scrolling) {
+    if(!scrolling) {
         redrawPlots();
     }
 }, 500);
@@ -42,28 +44,50 @@ socket.on('download-log', function(csvLog) {
 
 socket.on('download-log-remaining', function(remainingBytes) {
     // TODO Show the user a progress bar
-    console.log("remainingBytes:", remainingBytes);
+    console.log("remainingBytes: ", remainingBytes);
     // throw "Not yet implemented";
 })
 
 socket.on('data', function(pkts){
     //Temporary measure till we can split pkts on their timestamp
-    //Treating
     packets.push(pkts); //store pkts for scrolling
     if (!scrolling) {
-        unpack(pkts);       //Unpack pkts and push them    
+        unpack(pkts);       //Unpack pkts and push them
     }
 });
+
+$(function() {
+    $("#plots").sortable();
+    $("#plots").disableSelection();
+    $("#slider-range").slider({
+        range: true,
+        min: 0,
+        max: 500,
+        values: [ 0, 500 ],
+        stop:function(event, ui) {
+            console.log("Slider moved to: " + ui.values[0] + "-" + ui.values[1]);
+            //scrollAB(ui.values[0], ui.values[1]);
+        }
+    });
+});
+
+function isScrolling() {
+    var values = $("#slider-range").slider("values");
+    return (values[0] != 0 || values[1] != 500);
+}
 
 //Purges all plots in plots array of data points
 function clearPlots() {
     for (var m in plots) {
+        //Pass over if it is not a highcharts
         var plot = plots[m];
-        console.log(plot);
-        for(var k in plot.series[0].length){
-            console.log(plot.series[0][k]);
-            plot.series[0].removePoint(0);
+        if (isUndefined(plot.redraw)) {
+            continue;
         }
+        //plot holds series property which is an array, as a chart can hold multiple lines
+        //Every series holds a readonly data property (all the data points)
+        //setData is the public method with parameters: New data, [Redraw chart after], [mixed animation], [updatePoints]
+        plot.series[0].setData([], false);
     }
 }
 
@@ -71,28 +95,48 @@ function clearPlots() {
 function redrawPlots() {
     for (var m in plots) {
             var plot = plots[m];
-            if (typeof plot.redraw === "undefined") {
+            //Check if the plot has a redraw function
+            if (isUndefined(plot.redraw)) { //G-plots do not have a redraw function
                 continue;
             }
-            plot.redraw();
+            plot.redraw();      //Execute a redraw
     }
+}
+
+function isUndefined(arg) {
+    return (typeof arg === "undefined");
 }
 
 //Scrolls from packet beg (int) to end (int)
 function scrollAB(beg, end){
     //beg smaller than end AND end smaller than total packet number
     //if (beg < end && end < packets.length) {
-    if(beg != 0 && end != 500){
+    if(beg != 0 || end != 500){ //isScrolling() is bound to slider
+        console.log("Scrolling");
         scrolling = true;   //Stops redrawing of charts
         clearPlots();       //Clears charts of datapoints
         var start = Math.floor(packets.length*beg/500);
         var stop = Math.floor(packets.length*end/500);
-        console.log(start + "-" + stop);
+        console.log("Start-Stop: " + start + "-" + stop);
         for (var i = start; i < stop; i++){
             unpack(packets[i]);
         }
-    } else {
-        scrolling = false;
+        redrawPlots();
+    } else {    //
+        scrolling = false;  //Start updating and redrawing plots
+        clearPlots();       //Clean up the plots
+
+        /* To unpack the last PLOTLENGTH number of packages,
+         * we first check if number is lower than plotlength */
+        var i = packets.length - PLOTLENGTH;
+        if (i < 0) {
+            i = 0;
+        }
+
+        //Unpack 
+        for (i; i < packets.length; i++) {
+            unpack(packets[i]);
+        }
     }
 }
 
@@ -103,7 +147,7 @@ function unpack(pkts) {
         if (pkt.name === "request log") {
             throw {
                 name : "NotYetImplementedError", 
-                message : "A request log packet was registered. All features with request logs are currently unsupported."
+                message : "A request log packet was registered. All features with request logs are currently not supported."
             };
         }
         else{
@@ -141,20 +185,6 @@ function unpack(pkts) {
                 }
             }
         }
-        $(function() {
-            $("#plots").sortable();
-            $("#plots").disableSelection();
-            $("#slider-range").slider({
-                range: true,
-                min: 0,
-                max: 500,
-                values: [ 0, 500 ],
-                slide:function(event, ui) {
-                    console.log("Slider moved to: " + ui.values[0] + "-" + ui.values[1]);
-                    scrollAB(ui.values[0], ui.values[1]);
-                }
-            });
-        });
     }
 }
 
@@ -240,7 +270,6 @@ function create_g_plot() {
         $('#GX').css("background-color", "lightgrey");
         $('#GY').css("background-color", "lightgrey");
     }
-
 }
 
 function create_line_plot(name, value) {
@@ -328,23 +357,4 @@ function togglePlotline(chart){
 function download_data(){
     var logNumber = document.getElementById('log-number').value
     socket.emit('download', logNumber);
-}
-
-function scroll(time){
-    //Time must be in "the past"
-    if(time < packets.length){
-        //For every chart currently active
-        for (var m in plots) {
-            var plot = plots[m];
-
-            //Do we have equal or more plotpoints for a full chart
-            if (time >= PLOTLENGTH) {
-
-            }
-            if (typeof plot.redraw === "undefined") {
-                continue;
-            }
-            plot.redraw();
-        }
-    }
 }
